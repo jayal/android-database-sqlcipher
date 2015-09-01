@@ -16,50 +16,58 @@
 
 package net.sqlcipher.database;
 
-import android.os.SystemClock;
+import android.os.ParcelFileDescriptor;
 
 /**
- * A pre-compiled statement against a {@link SQLiteDatabase} that can be reused.
- * The statement cannot return multiple rows, but 1x1 result sets are allowed.
- * Don't use SQLiteStatement constructor directly, please use
- * {@link SQLiteDatabase#compileStatement(String)}
- *
- * SQLiteStatement is not internally synchronized so code using a SQLiteStatement from multiple
- * threads should perform its own synchronization when using the SQLiteStatement.
+ * Represents a statement that can be executed against a database.  The statement
+ * cannot return multiple rows or columns, but single value (1 x 1) result sets
+ * are supported.
+ * <p>
+ * This class is not thread-safe.
+ * </p>
  */
-public class SQLiteStatement extends SQLiteProgram
-{
-    /**
-     * Don't use SQLiteStatement constructor directly, please use
-     * {@link SQLiteDatabase#compileStatement(String)}
-     * @param db
-     * @param sql
-     */
-    /* package */ SQLiteStatement(SQLiteDatabase db, String sql) {
-        super(db, sql);
+public final class SQLiteStatement extends SQLiteProgram {
+    SQLiteStatement(SQLiteDatabase db, String sql, Object[] bindArgs) {
+        super(db, sql, bindArgs, null);
     }
 
     /**
-     * Execute this SQL statement, if it is not a query. For example,
-     * CREATE TABLE, DELTE, INSERT, etc.
+     * Execute this SQL statement, if it is not a SELECT / INSERT / DELETE / UPDATE, for example
+     * CREATE / DROP table, view, trigger, index etc.
      *
      * @throws android.database.SQLException If the SQL string is invalid for
      *         some reason
      */
     public void execute() {
-        if (!mDatabase.isOpen()) {
-            throw new IllegalStateException("database " + mDatabase.getPath() + " already closed");
-        }
-        long timeStart = SystemClock.uptimeMillis();
-        mDatabase.lock();
-
         acquireReference();
         try {
-            native_execute();
-            mDatabase.logTimeStat(mSql, timeStart);
+            getSession().execute(getSql(), getBindArgs(), getConnectionFlags(), null);
+        } catch (SQLiteDatabaseCorruptException ex) {
+            onCorruption();
+            throw ex;
         } finally {
             releaseReference();
-            mDatabase.unlock();
+        }
+    }
+
+    /**
+     * Execute this SQL statement, if the the number of rows affected by execution of this SQL
+     * statement is of any importance to the caller - for example, UPDATE / DELETE SQL statements.
+     *
+     * @return the number of rows affected by this SQL statement execution.
+     * @throws android.database.SQLException If the SQL string is invalid for
+     *         some reason
+     */
+    public int executeUpdateDelete() {
+        acquireReference();
+        try {
+            return getSession().executeForChangedRowCount(
+                    getSql(), getBindArgs(), getConnectionFlags(), null);
+        } catch (SQLiteDatabaseCorruptException ex) {
+            onCorruption();
+            throw ex;
+        } finally {
+            releaseReference();
         }
     }
 
@@ -73,38 +81,15 @@ public class SQLiteStatement extends SQLiteProgram
      *         some reason
      */
     public long executeInsert() {
-        if (!mDatabase.isOpen()) {
-            throw new IllegalStateException("database " + mDatabase.getPath() + " already closed");
-        }
-        long timeStart = SystemClock.uptimeMillis();
-        mDatabase.lock();
-
         acquireReference();
         try {
-            native_execute();
-            mDatabase.logTimeStat(mSql, timeStart);
-            return (mDatabase.lastChangeCount() > 0) ? mDatabase.lastInsertRow() : -1;
+            return getSession().executeForLastInsertedRowId(
+                    getSql(), getBindArgs(), getConnectionFlags(), null);
+        } catch (SQLiteDatabaseCorruptException ex) {
+            onCorruption();
+            throw ex;
         } finally {
             releaseReference();
-            mDatabase.unlock();
-        }
-    }
-
-    public long executeUpdateDelete() {
-        if (!mDatabase.isOpen()) {
-            throw new IllegalStateException("database " + mDatabase.getPath() + " already closed");
-        }
-        long timeStart = SystemClock.uptimeMillis();
-        mDatabase.lock();
-
-        acquireReference();
-        try {
-            native_execute();
-            mDatabase.logTimeStat(mSql, timeStart);
-            return mDatabase.lastChangeCount();
-        } finally {
-            releaseReference();
-            mDatabase.unlock();
         }
     }
 
@@ -114,23 +99,18 @@ public class SQLiteStatement extends SQLiteProgram
      *
      * @return The result of the query.
      *
-     * @throws android.database.sqlite.SQLiteDoneException if the query returns zero rows
+     * @throws net.sqlcipher.database.SQLiteDoneException if the query returns zero rows
      */
     public long simpleQueryForLong() {
-        if (!mDatabase.isOpen()) {
-            throw new IllegalStateException("database " + mDatabase.getPath() + " already closed");
-        }
-        long timeStart = SystemClock.uptimeMillis();
-        mDatabase.lock();
-
         acquireReference();
         try {
-            long retValue = native_1x1_long();
-            mDatabase.logTimeStat(mSql, timeStart);
-            return retValue;
+            return getSession().executeForLong(
+                    getSql(), getBindArgs(), getConnectionFlags(), null);
+        } catch (SQLiteDatabaseCorruptException ex) {
+            onCorruption();
+            throw ex;
         } finally {
             releaseReference();
-            mDatabase.unlock();
         }
     }
 
@@ -140,27 +120,44 @@ public class SQLiteStatement extends SQLiteProgram
      *
      * @return The result of the query.
      *
-     * @throws android.database.sqlite.SQLiteDoneException if the query returns zero rows
+     * @throws net.sqlcipher.database.SQLiteDoneException if the query returns zero rows
      */
     public String simpleQueryForString() {
-        if (!mDatabase.isOpen()) {
-            throw new IllegalStateException("database " + mDatabase.getPath() + " already closed");
-        }
-        long timeStart = SystemClock.uptimeMillis();
-        mDatabase.lock();
-
         acquireReference();
         try {
-            String retValue = native_1x1_string();
-            mDatabase.logTimeStat(mSql, timeStart);
-            return retValue;
+            return getSession().executeForString(
+                    getSql(), getBindArgs(), getConnectionFlags(), null);
+        } catch (SQLiteDatabaseCorruptException ex) {
+            onCorruption();
+            throw ex;
         } finally {
             releaseReference();
-            mDatabase.unlock();
         }
     }
 
-    private final native void native_execute();
-    private final native long native_1x1_long();
-    private final native String native_1x1_string();
+    /**
+     * Executes a statement that returns a 1 by 1 table with a blob value.
+     *
+     * @return A read-only file descriptor for a copy of the blob value, or {@code null}
+     *         if the value is null or could not be read for some reason.
+     *
+     * @throws net.sqlcipher.database.SQLiteDoneException if the query returns zero rows
+     */
+    public ParcelFileDescriptor simpleQueryForBlobFileDescriptor() {
+        acquireReference();
+        try {
+            return getSession().executeForBlobFileDescriptor(
+                    getSql(), getBindArgs(), getConnectionFlags(), null);
+        } catch (SQLiteDatabaseCorruptException ex) {
+            onCorruption();
+            throw ex;
+        } finally {
+            releaseReference();
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "SQLiteProgram: " + getSql();
+    }
 }

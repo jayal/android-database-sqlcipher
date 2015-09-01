@@ -16,6 +16,11 @@
 
 package net.sqlcipher;
 
+import org.apache.commons.codec.binary.Hex;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.OperationApplicationException;
 import net.sqlcipher.database.SQLiteAbortException;
 import net.sqlcipher.database.SQLiteConstraintException;
 import net.sqlcipher.database.SQLiteDatabase;
@@ -25,19 +30,18 @@ import net.sqlcipher.database.SQLiteException;
 import net.sqlcipher.database.SQLiteFullException;
 import net.sqlcipher.database.SQLiteProgram;
 import net.sqlcipher.database.SQLiteStatement;
+import android.os.OperationCanceledException;
+import android.os.Parcel;
+import android.os.ParcelFileDescriptor;
+import android.text.TextUtils;
+import android.util.Log;
 
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.text.Collator;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
-
-import android.content.ContentValues;
-import android.content.OperationApplicationException;
-import android.os.Parcel;
-import android.text.TextUtils;
-import android.util.Config;
-import android.util.Log;
 
 /**
  * Static utility methods for dealing with databases and {@link Cursor}s.
@@ -46,9 +50,27 @@ public class DatabaseUtils {
     private static final String TAG = "DatabaseUtils";
 
     private static final boolean DEBUG = false;
-    private static final boolean LOCAL_LOGV = DEBUG ? Config.LOGD : Config.LOGV;
 
-    private static final String[] countProjection = new String[]{"count(*)"};
+    /** One of the values returned by {@link #getSqlStatementType(String)}. */
+    public static final int STATEMENT_SELECT = 1;
+    /** One of the values returned by {@link #getSqlStatementType(String)}. */
+    public static final int STATEMENT_UPDATE = 2;
+    /** One of the values returned by {@link #getSqlStatementType(String)}. */
+    public static final int STATEMENT_ATTACH = 3;
+    /** One of the values returned by {@link #getSqlStatementType(String)}. */
+    public static final int STATEMENT_BEGIN = 4;
+    /** One of the values returned by {@link #getSqlStatementType(String)}. */
+    public static final int STATEMENT_COMMIT = 5;
+    /** One of the values returned by {@link #getSqlStatementType(String)}. */
+    public static final int STATEMENT_ABORT = 6;
+    /** One of the values returned by {@link #getSqlStatementType(String)}. */
+    public static final int STATEMENT_PRAGMA = 7;
+    /** One of the values returned by {@link #getSqlStatementType(String)}. */
+    public static final int STATEMENT_DDL = 8;
+    /** One of the values returned by {@link #getSqlStatementType(String)}. */
+    public static final int STATEMENT_UNPREPARED = 9;
+    /** One of the values returned by {@link #getSqlStatementType(String)}. */
+    public static final int STATEMENT_OTHER = 99;
 
     /**
      * Special function for writing an exception result at the header of
@@ -83,6 +105,9 @@ public class DatabaseUtils {
             code = 9;
         } else if (e instanceof OperationApplicationException) {
             code = 10;
+        } else if (e instanceof OperationCanceledException) {
+            code = 11;
+            logException = false;
         } else {
             reply.writeException(e);
             Log.e(TAG, "Writing exception to parcel", e);
@@ -106,7 +131,7 @@ public class DatabaseUtils {
      * @see Parcel#readException
      */
     public static final void readExceptionFromParcel(Parcel reply) {
-        int code = reply.readInt();
+        int code = reply.readExceptionCode();
         if (code == 0) return;
         String msg = reply.readString();
         DatabaseUtils.readExceptionFromParcel(reply, msg, code);
@@ -114,7 +139,7 @@ public class DatabaseUtils {
 
     public static void readExceptionWithFileNotFoundExceptionFromParcel(
             Parcel reply) throws FileNotFoundException {
-        int code = reply.readInt();
+        int code = reply.readExceptionCode();
         if (code == 0) return;
         String msg = reply.readString();
         if (code == 1) {
@@ -126,7 +151,7 @@ public class DatabaseUtils {
 
     public static void readExceptionWithOperationApplicationExceptionFromParcel(
             Parcel reply) throws OperationApplicationException {
-        int code = reply.readInt();
+        int code = reply.readExceptionCode();
         if (code == 0) return;
         String msg = reply.readString();
         if (code == 10) {
@@ -154,6 +179,8 @@ public class DatabaseUtils {
                 throw new SQLiteDiskIOException(msg);
             case 9:
                 throw new SQLiteException(msg);
+            case 11:
+                throw new OperationCanceledException(msg);
             default:
                 reply.readException(code, msg);
         }
@@ -209,16 +236,86 @@ public class DatabaseUtils {
      */
     public static int getTypeOfObject(Object obj) {
         if (obj == null) {
-            return 0; /* Cursor.FIELD_TYPE_NULL */
+            return Cursor.FIELD_TYPE_NULL;
         } else if (obj instanceof byte[]) {
-            return 4; /* Cursor.FIELD_TYPE_BLOB */
+            return Cursor.FIELD_TYPE_BLOB;
         } else if (obj instanceof Float || obj instanceof Double) {
-            return 2; /* Cursor.FIELD_TYPE_FLOAT */
-        } else if (obj instanceof Long || obj instanceof Integer) {
-            return 1; /* Cursor.FIELD_TYPE_INTEGER */
+            return Cursor.FIELD_TYPE_FLOAT;
+        } else if (obj instanceof Long || obj instanceof Integer
+                || obj instanceof Short || obj instanceof Byte) {
+            return Cursor.FIELD_TYPE_INTEGER;
         } else {
-            return 3; /* Cursor.FIELD_TYPE_STRING */
+            return Cursor.FIELD_TYPE_STRING;
         }
+    }
+
+    /**
+     * Fills the specified cursor window by iterating over the contents of the cursor.
+     * The window is filled until the cursor is exhausted or the window runs out
+     * of space.
+     *
+     * The original position of the cursor is left unchanged by this operation.
+     *
+     * @param cursor The cursor that contains the data to put in the window.
+     * @param position The start position for filling the window.
+     * @param window The window to fill.
+     * @hide
+     */
+    public static void cursorFillWindow(final Cursor cursor,
+            int position, final CursorWindow window) {
+        if (position < 0 || position >= cursor.getCount()) {
+            return;
+        }
+        final int oldPos = cursor.getPosition();
+        final int numColumns = cursor.getColumnCount();
+        window.clear();
+        window.setStartPosition(position);
+        window.setNumColumns(numColumns);
+        if (cursor.moveToPosition(position)) {
+            do {
+                if (!window.allocRow()) {
+                    break;
+                }
+                for (int i = 0; i < numColumns; i++) {
+                    final int type = cursor.getType(i);
+                    final boolean success;
+                    switch (type) {
+                        case Cursor.FIELD_TYPE_NULL:
+                            success = window.putNull(position, i);
+                            break;
+
+                        case Cursor.FIELD_TYPE_INTEGER:
+                            success = window.putLong(cursor.getLong(i), position, i);
+                            break;
+
+                        case Cursor.FIELD_TYPE_FLOAT:
+                            success = window.putDouble(cursor.getDouble(i), position, i);
+                            break;
+
+                        case Cursor.FIELD_TYPE_BLOB: {
+                            final byte[] value = cursor.getBlob(i);
+                            success = value != null ? window.putBlob(value, position, i)
+                                    : window.putNull(position, i);
+                            break;
+                        }
+
+                        default: // assume value is convertible to String
+                        case Cursor.FIELD_TYPE_STRING: {
+                            final String value = cursor.getString(i);
+                            success = value != null ? window.putString(value, position, i)
+                                    : window.putNull(position, i);
+                            break;
+                        }
+                    }
+                    if (!success) {
+                        window.freeLastRow();
+                        break;
+                    }
+                }
+                position += 1;
+            } while (cursor.moveToNext());
+        }
+        cursor.moveToPosition(oldPos);
     }
 
     /**
@@ -287,7 +384,6 @@ public class DatabaseUtils {
 
     /**
      * Concatenates two SQL WHERE clauses, handling empty or null values.
-     * @hide
      */
     public static String concatenateWhere(String a, String b) {
         if (TextUtils.isEmpty(a)) {
@@ -321,22 +417,9 @@ public class DatabaseUtils {
      */
     public static String getHexCollationKey(String name) {
         byte [] arr = getCollationKeyInBytes(name);
-        char[] keys = encodeHex(arr, HEX_DIGITS_LOWER);
+        char[] keys = Hex.encodeHex(arr);
         return new String(keys, 0, getKeyLen(arr) * 2);
     }
-
-    private static final char[] HEX_DIGITS_LOWER = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-
-    private static char[] encodeHex(final byte[] data, final char[] toDigits) {
-	        final int l = data.length;
-	        final char[] out = new char[l << 1];
-	        // two characters form the hex value.
-	        for (int i = 0, j = 0; i < l; i++) {
-	            out[j++] = toDigits[(0xF0 & data[i]) >>> 4];
-	            out[j++] = toDigits[0x0F & data[i]];
-	        }
-	        return out;
-	}
 
     private static int getKeyLen(byte[] arr) {
         if (arr[arr.length - 1] != 0) {
@@ -640,20 +723,84 @@ public class DatabaseUtils {
     }
 
     /**
+     * Picks a start position for {@link Cursor#fillWindow} such that the
+     * window will contain the requested row and a useful range of rows
+     * around it.
+     *
+     * When the data set is too large to fit in a cursor window, seeking the
+     * cursor can become a very expensive operation since we have to run the
+     * query again when we move outside the bounds of the current window.
+     *
+     * We try to choose a start position for the cursor window such that
+     * 1/3 of the window's capacity is used to hold rows before the requested
+     * position and 2/3 of the window's capacity is used to hold rows after the
+     * requested position.
+     *
+     * @param cursorPosition The row index of the row we want to get.
+     * @param cursorWindowCapacity The estimated number of rows that can fit in
+     * a cursor window, or 0 if unknown.
+     * @return The recommended start position, always less than or equal to
+     * the requested row.
+     * @hide
+     */
+    public static int cursorPickFillWindowStartPosition(
+            int cursorPosition, int cursorWindowCapacity) {
+        return Math.max(cursorPosition - cursorWindowCapacity / 3, 0);
+    }
+
+    /**
      * Query the table for the number of rows in the table.
      * @param db the database the table is in
      * @param table the name of the table to query
      * @return the number of rows in the table
      */
     public static long queryNumEntries(SQLiteDatabase db, String table) {
-        Cursor cursor = db.query(table, countProjection,
-                null, null, null, null, null);
-        try {
-            cursor.moveToFirst();
-            return cursor.getLong(0);
-        } finally {
-            cursor.close();
-        }
+        return queryNumEntries(db, table, null, null);
+    }
+
+    /**
+     * Query the table for the number of rows in the table.
+     * @param db the database the table is in
+     * @param table the name of the table to query
+     * @param selection A filter declaring which rows to return,
+     *              formatted as an SQL WHERE clause (excluding the WHERE itself).
+     *              Passing null will count all rows for the given table
+     * @return the number of rows in the table filtered by the selection
+     */
+    public static long queryNumEntries(SQLiteDatabase db, String table, String selection) {
+        return queryNumEntries(db, table, selection, null);
+    }
+
+    /**
+     * Query the table for the number of rows in the table.
+     * @param db the database the table is in
+     * @param table the name of the table to query
+     * @param selection A filter declaring which rows to return,
+     *              formatted as an SQL WHERE clause (excluding the WHERE itself).
+     *              Passing null will count all rows for the given table
+     * @param selectionArgs You may include ?s in selection,
+     *              which will be replaced by the values from selectionArgs,
+     *              in order that they appear in the selection.
+     *              The values will be bound as Strings.
+     * @return the number of rows in the table filtered by the selection
+     */
+    public static long queryNumEntries(SQLiteDatabase db, String table, String selection,
+            String[] selectionArgs) {
+        String s = (!TextUtils.isEmpty(selection)) ? " where " + selection : "";
+        return longForQuery(db, "select count(*) from " + table + s,
+                    selectionArgs);
+    }
+
+    /**
+     * Query the table to check whether a table is empty or not
+     * @param db the database the table is in
+     * @param table the name of the table to query
+     * @return True if the table is empty
+     * @hide
+     */
+    public static boolean queryIsEmpty(SQLiteDatabase db, String table) {
+        long isEmpty = longForQuery(db, "select exists(select 1 from " + table + ")", null);
+        return isEmpty == 0;
     }
 
     /**
@@ -674,14 +821,8 @@ public class DatabaseUtils {
      * first column of the first row.
      */
     public static long longForQuery(SQLiteStatement prog, String[] selectionArgs) {
-        if (selectionArgs != null) {
-            int size = selectionArgs.length;
-            for (int i = 0; i < size; i++) {
-                bindObjectToProgram(prog, i + 1, selectionArgs[i]);
-            }
-        }
-        long value = prog.simpleQueryForLong();
-        return value;
+        prog.bindAllArgsAsStrings(selectionArgs);
+        return prog.simpleQueryForLong();
     }
 
     /**
@@ -702,14 +843,36 @@ public class DatabaseUtils {
      * first column of the first row.
      */
     public static String stringForQuery(SQLiteStatement prog, String[] selectionArgs) {
-        if (selectionArgs != null) {
-            int size = selectionArgs.length;
-            for (int i = 0; i < size; i++) {
-                bindObjectToProgram(prog, i + 1, selectionArgs[i]);
-            }
+        prog.bindAllArgsAsStrings(selectionArgs);
+        return prog.simpleQueryForString();
+    }
+
+    /**
+     * Utility method to run the query on the db and return the blob value in the
+     * first column of the first row.
+     *
+     * @return A read-only file descriptor for a copy of the blob value.
+     */
+    public static ParcelFileDescriptor blobFileDescriptorForQuery(SQLiteDatabase db,
+            String query, String[] selectionArgs) {
+        SQLiteStatement prog = db.compileStatement(query);
+        try {
+            return blobFileDescriptorForQuery(prog, selectionArgs);
+        } finally {
+            prog.close();
         }
-        String value = prog.simpleQueryForString();
-        return value;
+    }
+
+    /**
+     * Utility method to run the pre-compiled query and return the blob value in the
+     * first column of the first row.
+     *
+     * @return A read-only file descriptor for a copy of the blob value.
+     */
+    public static ParcelFileDescriptor blobFileDescriptorForQuery(SQLiteStatement prog,
+            String[] selectionArgs) {
+        prog.bindAllArgsAsStrings(selectionArgs);
+        return prog.simpleQueryForBlobFileDescriptor();
     }
 
     /**
@@ -722,8 +885,8 @@ public class DatabaseUtils {
      */
     public static void cursorStringToContentValuesIfPresent(Cursor cursor, ContentValues values,
             String column) {
-        final int index = cursor.getColumnIndexOrThrow(column);
-        if (!cursor.isNull(index)) {
+        final int index = cursor.getColumnIndex(column);
+        if (index != -1 && !cursor.isNull(index)) {
             values.put(column, cursor.getString(index));
         }
     }
@@ -738,8 +901,8 @@ public class DatabaseUtils {
      */
     public static void cursorLongToContentValuesIfPresent(Cursor cursor, ContentValues values,
             String column) {
-        final int index = cursor.getColumnIndexOrThrow(column);
-        if (!cursor.isNull(index)) {
+        final int index = cursor.getColumnIndex(column);
+        if (index != -1 && !cursor.isNull(index)) {
             values.put(column, cursor.getLong(index));
         }
     }
@@ -754,8 +917,8 @@ public class DatabaseUtils {
      */
     public static void cursorShortToContentValuesIfPresent(Cursor cursor, ContentValues values,
             String column) {
-        final int index = cursor.getColumnIndexOrThrow(column);
-        if (!cursor.isNull(index)) {
+        final int index = cursor.getColumnIndex(column);
+        if (index != -1 && !cursor.isNull(index)) {
             values.put(column, cursor.getShort(index));
         }
     }
@@ -770,8 +933,8 @@ public class DatabaseUtils {
      */
     public static void cursorIntToContentValuesIfPresent(Cursor cursor, ContentValues values,
             String column) {
-        final int index = cursor.getColumnIndexOrThrow(column);
-        if (!cursor.isNull(index)) {
+        final int index = cursor.getColumnIndex(column);
+        if (index != -1 && !cursor.isNull(index)) {
             values.put(column, cursor.getInt(index));
         }
     }
@@ -786,8 +949,8 @@ public class DatabaseUtils {
      */
     public static void cursorFloatToContentValuesIfPresent(Cursor cursor, ContentValues values,
             String column) {
-        final int index = cursor.getColumnIndexOrThrow(column);
-        if (!cursor.isNull(index)) {
+        final int index = cursor.getColumnIndex(column);
+        if (index != -1 && !cursor.isNull(index)) {
             values.put(column, cursor.getFloat(index));
         }
     }
@@ -802,17 +965,22 @@ public class DatabaseUtils {
      */
     public static void cursorDoubleToContentValuesIfPresent(Cursor cursor, ContentValues values,
             String column) {
-        final int index = cursor.getColumnIndexOrThrow(column);
-        if (!cursor.isNull(index)) {
+        final int index = cursor.getColumnIndex(column);
+        if (index != -1 && !cursor.isNull(index)) {
             values.put(column, cursor.getDouble(index));
         }
     }
 
     /**
-     * This class allows users to do multiple inserts into a table but
-     * compile the SQL insert statement only once, which may increase
-     * performance.
+     * This class allows users to do multiple inserts into a table using
+     * the same statement.
+     * <p>
+     * This class is not thread-safe.
+     * </p>
+     *
+     * @deprecated Use {@link SQLiteStatement} instead.
      */
+    @Deprecated
     public static class InsertHelper {
         private final SQLiteDatabase mDb;
         private final String mTableName;
@@ -829,6 +997,13 @@ public class DatabaseUtils {
          * table_info(...)" command that we depend on.
          */
         public static final int TABLE_INFO_PRAGMA_COLUMNNAME_INDEX = 1;
+
+        /**
+         * This field was accidentally exposed in earlier versions of the platform
+         * so we can hide it but we can't remove it.
+         *
+         * @hide
+         */
         public static final int TABLE_INFO_PRAGMA_DEFAULT_INDEX = 4;
 
         /**
@@ -882,7 +1057,7 @@ public class DatabaseUtils {
             sb.append(sbv);
 
             mInsertSQL = sb.toString();
-            if (LOCAL_LOGV) Log.v(TAG, "insert statement is " + mInsertSQL);
+            if (DEBUG) Log.v(TAG, "insert statement is " + mInsertSQL);
         }
 
         private SQLiteStatement getStatement(boolean allowReplace) throws SQLException {
@@ -915,24 +1090,35 @@ public class DatabaseUtils {
          * @return the row ID of the newly inserted row, or -1 if an
          * error occurred
          */
-        private synchronized long insertInternal(ContentValues values, boolean allowReplace) {
+        private long insertInternal(ContentValues values, boolean allowReplace) {
+            // Start a transaction even though we don't really need one.
+            // This is to help maintain compatibility with applications that
+            // access InsertHelper from multiple threads even though they never should have.
+            // The original code used to lock the InsertHelper itself which was prone
+            // to deadlocks.  Starting a transaction achieves the same mutual exclusion
+            // effect as grabbing a lock but without the potential for deadlocks.
+            mDb.beginTransactionNonExclusive();
             try {
                 SQLiteStatement stmt = getStatement(allowReplace);
                 stmt.clearBindings();
-                if (LOCAL_LOGV) Log.v(TAG, "--- inserting in table " + mTableName);
+                if (DEBUG) Log.v(TAG, "--- inserting in table " + mTableName);
                 for (Map.Entry<String, Object> e: values.valueSet()) {
                     final String key = e.getKey();
                     int i = getColumnIndex(key);
                     DatabaseUtils.bindObjectToProgram(stmt, i, e.getValue());
-                    if (LOCAL_LOGV) {
+                    if (DEBUG) {
                         Log.v(TAG, "binding " + e.getValue() + " to column " +
                               i + " (" + key + ")");
                     }
                 }
-                return stmt.executeInsert();
+                long result = stmt.executeInsert();
+                mDb.setTransactionSuccessful();
+                return result;
             } catch (SQLException e) {
                 Log.e(TAG, "Error inserting " + values + " into table  " + mTableName, e);
                 return -1;
+            } finally {
+                mDb.endTransaction();
             }
         }
 
@@ -1069,7 +1255,7 @@ public class DatabaseUtils {
                         + "execute");
             }
             try {
-                if (LOCAL_LOGV) Log.v(TAG, "--- doing insert or replace in table " + mTableName);
+                if (DEBUG) Log.v(TAG, "--- doing insert or replace in table " + mTableName);
                 return mPreparedStatement.executeInsert();
             } catch (SQLException e) {
                 Log.e(TAG, "Error executing InsertHelper with table " + mTableName, e);
@@ -1146,64 +1332,6 @@ public class DatabaseUtils {
         }
     }
 
-    public static void cursorFillWindow(final Cursor cursor,
-            int position, final android.database.CursorWindow window) {
-        if (position < 0 || position >= cursor.getCount()) {
-            return;
-        }
-        final int oldPos = cursor.getPosition();
-        final int numColumns = cursor.getColumnCount();
-        window.clear();
-        window.setStartPosition(position);
-        window.setNumColumns(numColumns);
-        if (cursor.moveToPosition(position)) {
-            do {
-                if (!window.allocRow()) {
-                    break;
-                }
-                for (int i = 0; i < numColumns; i++) {
-                    final int type = cursor.getType(i);
-                    final boolean success;
-                    switch (type) {
-                        case Cursor.FIELD_TYPE_NULL:
-                            success = window.putNull(position, i);
-                            break;
-
-                        case Cursor.FIELD_TYPE_INTEGER:
-                            success = window.putLong(cursor.getLong(i), position, i);
-                            break;
-
-                        case Cursor.FIELD_TYPE_FLOAT:
-                            success = window.putDouble(cursor.getDouble(i), position, i);
-                            break;
-
-                        case Cursor.FIELD_TYPE_BLOB: {
-                            final byte[] value = cursor.getBlob(i);
-                            success = value != null ? window.putBlob(value, position, i)
-                                    : window.putNull(position, i);
-                            break;
-                        }
-
-                        default: // assume value is convertible to String
-                        case Cursor.FIELD_TYPE_STRING: {
-                            final String value = cursor.getString(i);
-                            success = value != null ? window.putString(value, position, i)
-                                    : window.putNull(position, i);
-                            break;
-                        }
-                    }
-                    if (!success) {
-                        window.freeLastRow();
-                        break;
-                    }
-                }
-                position += 1;
-            } while (cursor.moveToNext());
-        }
-        cursor.moveToPosition(oldPos);
-    }
-
-
     /**
      * Creates a db and populates it with the sql statements in sqlStatements.
      *
@@ -1214,13 +1342,9 @@ public class DatabaseUtils {
      *   of the form returned by sqlite3's <tt>.dump</tt> command (statements separated by
      *   semicolons)
      */
-    /*
     static public void createDbFromSqlStatements(
             Context context, String dbName, int dbVersion, String sqlStatements) {
-    	
-    	//TODO TODO TODO what needs ot happen here
         SQLiteDatabase db = context.openOrCreateDatabase(dbName, 0, null);
-        
         // TODO: this is not quite safe since it assumes that all semicolons at the end of a line
         // terminate statements. It is possible that a text field contains ;\n. We will have to fix
         // this if that turns out to be a problem.
@@ -1231,5 +1355,81 @@ public class DatabaseUtils {
         }
         db.setVersion(dbVersion);
         db.close();
-    }*/
+    }
+
+    /**
+     * Returns one of the following which represent the type of the given SQL statement.
+     * <ol>
+     *   <li>{@link #STATEMENT_SELECT}</li>
+     *   <li>{@link #STATEMENT_UPDATE}</li>
+     *   <li>{@link #STATEMENT_ATTACH}</li>
+     *   <li>{@link #STATEMENT_BEGIN}</li>
+     *   <li>{@link #STATEMENT_COMMIT}</li>
+     *   <li>{@link #STATEMENT_ABORT}</li>
+     *   <li>{@link #STATEMENT_OTHER}</li>
+     * </ol>
+     * @param sql the SQL statement whose type is returned by this method
+     * @return one of the values listed above
+     */
+    public static int getSqlStatementType(String sql) {
+        sql = sql.trim();
+        if (sql.length() < 3) {
+            return STATEMENT_OTHER;
+        }
+        String prefixSql = sql.substring(0, 3).toUpperCase(Locale.ROOT);
+        if (prefixSql.equals("SEL")) {
+            return STATEMENT_SELECT;
+        } else if (prefixSql.equals("INS") ||
+                prefixSql.equals("UPD") ||
+                prefixSql.equals("REP") ||
+                prefixSql.equals("DEL")) {
+            return STATEMENT_UPDATE;
+        } else if (prefixSql.equals("ATT")) {
+            return STATEMENT_ATTACH;
+        } else if (prefixSql.equals("COM")) {
+            return STATEMENT_COMMIT;
+        } else if (prefixSql.equals("END")) {
+            return STATEMENT_COMMIT;
+        } else if (prefixSql.equals("ROL")) {
+            return STATEMENT_ABORT;
+        } else if (prefixSql.equals("BEG")) {
+            return STATEMENT_BEGIN;
+        } else if (prefixSql.equals("PRA")) {
+            return STATEMENT_PRAGMA;
+        } else if (prefixSql.equals("CRE") || prefixSql.equals("DRO") ||
+                prefixSql.equals("ALT")) {
+            return STATEMENT_DDL;
+        } else if (prefixSql.equals("ANA") || prefixSql.equals("DET")) {
+            return STATEMENT_UNPREPARED;
+        }
+        return STATEMENT_OTHER;
+    }
+
+    /**
+     * Appends one set of selection args to another. This is useful when adding a selection
+     * argument to a user provided set.
+     */
+    public static String[] appendSelectionArgs(String[] originalValues, String[] newValues) {
+        if (originalValues == null || originalValues.length == 0) {
+            return newValues;
+        }
+        String[] result = new String[originalValues.length + newValues.length ];
+        System.arraycopy(originalValues, 0, result, 0, originalValues.length);
+        System.arraycopy(newValues, 0, result, originalValues.length, newValues.length);
+        return result;
+    }
+
+    /**
+     * Returns column index of "_id" column, or -1 if not found.
+     * @hide
+     */
+    public static int findRowIdColumnIndex(String[] columnNames) {
+        int length = columnNames.length;
+        for (int i = 0; i < length; i++) {
+            if (columnNames[i].equals("_id")) {
+                return i;
+            }
+        }
+        return -1;
+    }
 }

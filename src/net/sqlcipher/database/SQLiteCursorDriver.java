@@ -16,8 +16,8 @@
 
 package net.sqlcipher.database;
 
+import android.database.Cursor;
 import net.sqlcipher.database.SQLiteDatabase.CursorFactory;
-import net.sqlcipher.*;
 
 /**
  * A driver for SQLiteCursors that is used to create them and gets notified
@@ -39,11 +39,9 @@ public interface SQLiteCursorDriver {
     void cursorDeactivated();
 
     /**
-     * Called by a SQLiteCursor when it is requeryed.
-     * 
-     * @return The new count value.
+     * Called by a SQLiteCursor when it is requeried.
      */
-    void cursorRequeried(android.database.Cursor cursor);
+    void cursorRequeried(Cursor cursor);
 
     /**
      * Called by a SQLiteCursor when it it closed to destroy this object as well.

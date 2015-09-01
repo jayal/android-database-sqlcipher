@@ -22,3 +22,12 @@
 [submodule "notepadbot"]
 	path = dist/SQLCipherForAndroid-SDK/samples/notepadbot
 	url = https://github.com/guardianproject/notepadbot.git
+[submodule "external/libnativehelper"]
+	path = external/libnativehelper
+	url = https://android.googlesource.com/platform/libnativehelper
+[submodule "external/native"]
+	path = external/native
+	url = https://android.googlesource.com/platform/frameworks/native
+[submodule "external/platform_system_core"]
+	path = external/platform_system_core
+	url = https://github.com/android/platform_system_core

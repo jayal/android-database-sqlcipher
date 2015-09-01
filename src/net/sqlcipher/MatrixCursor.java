@@ -18,9 +18,6 @@ package net.sqlcipher;
 
 import java.util.ArrayList;
 
-import android.database.CharArrayBuffer;
-
-
 /**
  * A mutable cursor implementation backed by an array of {@code Object}s. Use
  * {@link #newRow()} to add rows. Automatically expands internal capacity
@@ -86,11 +83,10 @@ public class MatrixCursor extends AbstractCursor {
      *  row
      */
     public RowBuilder newRow() {
-        rowCount++;
-        int endIndex = rowCount * columnCount;
+        final int row = rowCount++;
+        final int endIndex = rowCount * columnCount;
         ensureCapacity(endIndex);
-        int start = endIndex - columnCount;
-        return new RowBuilder(start, endIndex);
+        return new RowBuilder(row);
     }
 
     /**
@@ -183,18 +179,29 @@ public class MatrixCursor extends AbstractCursor {
     }
 
     /**
-     * Builds a row, starting from the left-most column and adding one column
-     * value at a time. Follows the same ordering as the column names specified
-     * at cursor construction time.
+     * Builds a row of values using either of these approaches:
+     * <ul>
+     * <li>Values can be added with explicit column ordering using
+     * {@link #add(Object)}, which starts from the left-most column and adds one
+     * column value at a time. This follows the same ordering as the column
+     * names specified at cursor construction time.
+     * <li>Column and value pairs can be offered for possible inclusion using
+     * {@link #add(String, Object)}. If the cursor includes the given column,
+     * the value will be set for that column, otherwise the value is ignored.
+     * This approach is useful when matching data to a custom projection.
+     * </ul>
+     * Undefined values are left as {@code null}.
      */
     public class RowBuilder {
-
-        private int index;
+        private final int row;
         private final int endIndex;
 
-        RowBuilder(int index, int endIndex) {
-            this.index = index;
-            this.endIndex = endIndex;
+        private int index;
+
+        RowBuilder(int row) {
+            this.row = row;
+            this.index = row * columnCount;
+            this.endIndex = index + columnCount;
         }
 
         /**
@@ -211,6 +218,21 @@ public class MatrixCursor extends AbstractCursor {
             }
 
             data[index++] = columnValue;
+            return this;
+        }
+
+        /**
+         * Offer value for possible inclusion if this cursor defines the given
+         * column. Columns not defined by the cursor are silently ignored.
+         *
+         * @return this builder to support chaining
+         */
+        public RowBuilder add(String columnName, Object value) {
+            for (int i = 0; i < columnNames.length; i++) {
+                if (columnName.equals(columnNames[i])) {
+                    data[(row * columnCount) + i] = value;
+                }
+            }
             return this;
         }
     }
@@ -275,6 +297,12 @@ public class MatrixCursor extends AbstractCursor {
     }
 
     @Override
+    public byte[] getBlob(int column) {
+        Object value = get(column);
+        return (byte[]) value;
+    }
+
+    @Override
     public int getType(int column) {
         return DatabaseUtils.getTypeOfObject(get(column));
     }
@@ -283,6 +311,4 @@ public class MatrixCursor extends AbstractCursor {
     public boolean isNull(int column) {
         return get(column) == null;
     }
-
-
 }

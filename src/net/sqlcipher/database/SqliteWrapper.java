@@ -20,9 +20,8 @@ package net.sqlcipher.database;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
-
-import net.sqlcipher.*;
-
+import android.database.Cursor;
+import net.sqlcipher.database.SQLiteException;
 import android.net.Uri;
 import android.util.Log;
 import android.widget.Toast;
@@ -47,7 +46,7 @@ public final class SqliteWrapper {
 
     public static void checkSQLiteException(Context context, SQLiteException e) {
         if (isLowMemory(e)) {
-            Toast.makeText(context, e.getMessage(),
+            Toast.makeText(context, com.android.internal.R.string.low_memory,
                     Toast.LENGTH_SHORT).show();
         } else {
             throw e;
@@ -57,7 +56,7 @@ public final class SqliteWrapper {
     public static Cursor query(Context context, ContentResolver resolver, Uri uri,
             String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         try {
-            return (Cursor) resolver.query(uri, projection, selection, selectionArgs, sortOrder);
+            return resolver.query(uri, projection, selection, selectionArgs, sortOrder);
         } catch (SQLiteException e) {
             Log.e(TAG, "Catch a SQLiteException when query: ", e);
             checkSQLiteException(context, e);
@@ -65,7 +64,7 @@ public final class SqliteWrapper {
         }
     }
 
-    public static boolean requery(Context context, android.database.Cursor cursor) {
+    public static boolean requery(Context context, Cursor cursor) {
         try {
             return cursor.requery();
         } catch (SQLiteException e) {

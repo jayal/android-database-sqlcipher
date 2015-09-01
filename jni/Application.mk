@@ -1,4 +1,5 @@
 APP_PROJECT_PATH := $(shell pwd)
+APP_PLATFORM := android-21
 APP_ABI := armeabi armeabi-v7a x86
 APP_BUILD_SCRIPT := $(APP_PROJECT_PATH)/Android.mk
 # fixes this error when building external/android-sqlite/android/sqlite3_android.cpp

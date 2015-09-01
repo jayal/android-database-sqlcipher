@@ -20,12 +20,11 @@ include $(CLEAR_VARS)
 LOCAL_CFLAGS += -DSQLITE_HAS_CODEC
 
 LOCAL_SRC_FILES:= \
-	net_sqlcipher_database_SQLiteCompiledSql.cpp \
-	net_sqlcipher_database_SQLiteDatabase.cpp \
-	net_sqlcipher_database_SQLiteProgram.cpp \
-	net_sqlcipher_database_SQLiteQuery.cpp \
-	net_sqlcipher_database_SQLiteStatement.cpp \
-	net_sqlcipher_CursorWindow.cpp \
+    net_sqlcipher_CursorWindow.cpp \
+	net_sqlcipher_database_SQLiteCommon.cpp \
+	net_sqlcipher_database_SQLiteConnection.cpp \
+	net_sqlcipher_database_SQLiteDebug.cpp \
+	net_sqlcipher_database_SQLiteGlobal.cpp \
 	CursorWindow.cpp
 #	net_sqlcipher_database_sqlcipher_SQLiteDebug.cpp
 
@@ -35,12 +34,13 @@ LOCAL_C_INCLUDES += \
 	$(EXTERNAL_PATH)/openssl/include \
 	$(EXTERNAL_PATH)/platform-frameworks-base/core/jni \
 	$(EXTERNAL_PATH)/android-sqlite/android \
-	$(EXTERNAL_PATH)/dalvik/libnativehelper/include \
-	$(EXTERNAL_PATH)/dalvik/libnativehelper/include/nativehelper \
-	$(EXTERNAL_PATH)/platform-system-core/include \
+	$(EXTERNAL_PATH)/libnativehelper/include \
+	$(EXTERNAL_PATH)/libnativehelper/include/nativehelper \
+	$(EXTERNAL_PATH)/native/include \
 	$(LOCAL_PATH)/include \
 	$(EXTERNAL_PATH)/platform-frameworks-base/include \
 	$(EXTERNAL_PATH)/icu4c/common \
+	$(EXTERNAL_PATH)/platform-system-core/include
 
 LOCAL_SHARED_LIBRARIES := \
 	libcrypto \
@@ -54,7 +54,7 @@ LOCAL_LDFLAGS += -L../external/android-libs/$(TARGET_ARCH_ABI) -L../external/lib
 # libs from the NDK
 LOCAL_LDLIBS += -ldl -llog
 # libnativehelper and libandroid_runtime are included with Android but not the NDK
-LOCAL_LDLIBS += -lnativehelper -landroid_runtime -lutils -lbinder
+LOCAL_LDLIBS += -lnativehelper -landroid_runtime -lutils -lbinder -lcutils
 # these are build in the ../external section
 
 LOCAL_LDFLAGS += -fuse-ld=bfd
