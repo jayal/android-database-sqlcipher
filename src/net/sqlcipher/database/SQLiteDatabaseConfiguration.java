@@ -55,6 +55,8 @@ public final class SQLiteDatabaseConfiguration {
      * This is derived from the path but is stripped to remove PII.
      */
     public final String label;
+    
+    public final String password;
 
     /**
      * The flags used to open the database.
@@ -96,13 +98,14 @@ public final class SQLiteDatabaseConfiguration {
      * @param path The database path.
      * @param openFlags Open flags for the database, such as {@link SQLiteDatabase#OPEN_READWRITE}.
      */
-    public SQLiteDatabaseConfiguration(String path, int openFlags) {
+    public SQLiteDatabaseConfiguration(String path, String password, int openFlags) {
         if (path == null) {
             throw new IllegalArgumentException("path must not be null.");
         }
 
         this.path = path;
         label = stripPathForLogs(path);
+        this.password = password;
         this.openFlags = openFlags;
 
         // Set default values for optional parameters.
@@ -122,6 +125,7 @@ public final class SQLiteDatabaseConfiguration {
 
         this.path = other.path;
         this.label = other.label;
+        this.password = other.password;
         updateParametersFrom(other);
     }
 

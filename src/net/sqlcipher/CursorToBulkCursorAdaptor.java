@@ -18,6 +18,7 @@ package net.sqlcipher;
 
 import android.net.Uri;
 import android.os.*;
+import android.database.ContentObserver;
 
 
 /**

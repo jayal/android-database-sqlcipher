@@ -51,7 +51,7 @@ build-jni:
 	$(FAKETIME) ndk-build NDK_LIBS_OUT=$(JNI_DIR)/libs
 
 build-java:
-	$(FAKETIME_5) ant release
+	$(FAKETIME_5) ant clean release
 
 release:
 	-rm -rf ${RELEASE_DIR}

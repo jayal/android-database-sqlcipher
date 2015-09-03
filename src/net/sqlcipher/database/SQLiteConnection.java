@@ -16,12 +16,17 @@
 
 package net.sqlcipher.database;
 
-import dalvik.system.BlockGuard;
-import dalvik.system.CloseGuard;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Map;
+import java.util.regex.Pattern;
 
-import android.database.Cursor;
-import android.database.CursorWindow;
-import android.database.DatabaseUtils;
+import net.sqlcipher.CloseGuard;
+import net.sqlcipher.Cursor;
+import net.sqlcipher.CursorWindow;
+import net.sqlcipher.DatabaseUtils;
+import net.sqlcipher.SQLException;
 import net.sqlcipher.database.SQLiteDebug.DbStats;
 import android.os.CancellationSignal;
 import android.os.OperationCanceledException;
@@ -29,12 +34,6 @@ import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.util.LruCache;
 import android.util.Printer;
-
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * Represents a SQLite database connection. Each connection wraps an instance of
@@ -182,6 +181,15 @@ public final class SQLiteConnection implements CancellationSignal.OnCancelListen
     private static native void nativeCancel(long connectionPtr);
 
     private static native void nativeResetCancel(long connectionPtr, boolean cancelable);
+    
+    private static native void nativeSetKeyForChar(long connectionPtr, char[] key) throws SQLException;
+    
+    private static native void nativeSetKeyForString(long connectionPtr, String key) throws SQLException;
+    
+    private static native void nativeUpdateKeyForChar(long connectionPtr, char[] key) throws SQLException;
+    
+    private static native void nativeUpdateKeyForString(long connectionPtr, String key) throws SQLException;
+    
 
     private SQLiteConnection(SQLiteConnectionPool pool,
             SQLiteDatabaseConfiguration configuration,
@@ -223,6 +231,36 @@ public final class SQLiteConnection implements CancellationSignal.OnCancelListen
             throw ex;
         }
     }
+    
+    /**
+     * Change the password of the open database using sqlite3_rekey().
+     *
+     * @param password new database password
+     *
+     * @throws SQLiteException if there is an issue changing the password internally
+     *                         OR if the database is not open
+     *
+     * FUTURE @todo throw IllegalStateException if the database is not open and
+     *              update the test suite
+     */
+    void changePassword(String password) throws SQLiteException {
+        nativeUpdateKeyForString(mConnectionPtr, password);
+    }
+
+    /**
+     * Change the password of the open database using sqlite3_rekey().
+     *
+     * @param password new database password (char array)
+     *
+     * @throws SQLiteException if there is an issue changing the password internally
+     *                         OR if the database is not open
+     *
+     * FUTURE @todo throw IllegalStateException if the database is not open and
+     *              update the test suite
+     */
+    void changePassword(char[] password) throws SQLiteException {
+        nativeUpdateKeyForChar(mConnectionPtr, password);
+    }
 
     // Called by SQLiteConnectionPool only.
     // Closes the database closes and releases all of its associated resources.
@@ -235,6 +273,11 @@ public final class SQLiteConnection implements CancellationSignal.OnCancelListen
         mConnectionPtr = nativeOpen(mConfiguration.path, mConfiguration.openFlags,
                 mConfiguration.label,
                 SQLiteDebug.DEBUG_SQL_STATEMENTS, SQLiteDebug.DEBUG_SQL_TIME);
+
+        if (mConfiguration.password != null) {
+            // TODO: Jayal - Add method to prevent pragma keying attack
+            nativeSetKeyForChar(mConnectionPtr, mConfiguration.password.toCharArray());
+        }
 
         setPageSize();
         setForeignKeyModeFromConfiguration();
@@ -1112,13 +1155,14 @@ public final class SQLiteConnection implements CancellationSignal.OnCancelListen
     }
 
     private void applyBlockGuardPolicy(PreparedStatement statement) {
-        if (!mConfiguration.isInMemoryDb()) {
-            if (statement.mReadOnly) {
-                BlockGuard.getThreadPolicy().onReadFromDisk();
-            } else {
-                BlockGuard.getThreadPolicy().onWriteToDisk();
-            }
-        }
+        // SQLCIPHER CHANGE
+//        if (!mConfiguration.isInMemoryDb()) {
+//            if (statement.mReadOnly) {
+//                BlockGuard.getThreadPolicy().onReadFromDisk();
+//            } else {
+//                BlockGuard.getThreadPolicy().onWriteToDisk();
+//            }
+//        }
     }
 
     /**

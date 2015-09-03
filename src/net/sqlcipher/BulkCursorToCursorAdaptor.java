@@ -28,7 +28,7 @@ import android.util.Log;
 public final class BulkCursorToCursorAdaptor extends AbstractWindowedCursor {
     private static final String TAG = "BulkCursor";
 
-    private SelfContentObserver mObserverBridge = new SelfContentObserver(this);
+    //private SelfContentObserver mObserverBridge = new SelfContentObserver(this);
     private IBulkCursor mBulkCursor;
     private String[] mColumns;
     private boolean mWantsAllOnMoveCalls;
@@ -56,7 +56,8 @@ public final class BulkCursorToCursorAdaptor extends AbstractWindowedCursor {
      * @return A SelfContentObserver hooked up to this Cursor
      */
     public IContentObserver getObserver() {
-        return mObserverBridge.getContentObserver();
+        // TODO: Sqlcipher - Fix this code
+        return null; // mObserverBridge.getContentObserver();
     }
 
     private void throwIfCursorIsClosed() {

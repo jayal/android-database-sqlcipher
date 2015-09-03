@@ -16,9 +16,9 @@
 
 package net.sqlcipher.database;
 
-import android.database.AbstractWindowedCursor;
-import android.database.CursorWindow;
-import android.database.DatabaseUtils;
+import net.sqlcipher.AbstractWindowedCursor;
+import net.sqlcipher.CursorWindow;
+import net.sqlcipher.DatabaseUtils;
 import android.os.StrictMode;
 import android.util.Log;
 
@@ -94,11 +94,7 @@ public class SQLiteCursor extends AbstractWindowedCursor {
         if (query == null) {
             throw new IllegalArgumentException("query object cannot be null");
         }
-        if (StrictMode.vmSqliteObjectLeaksEnabled()) {
-            mStackTrace = new DatabaseObjectNotClosedException().fillInStackTrace();
-        } else {
-            mStackTrace = null;
-        }
+        mStackTrace = new DatabaseObjectNotClosedException().fillInStackTrace();
         mDriver = driver;
         mEditTable = editTable;
         mColumnNameMap = null;
@@ -263,7 +259,7 @@ public class SQLiteCursor extends AbstractWindowedCursor {
                 if (mStackTrace != null) {
                     String sql = mQuery.getSql();
                     int len = sql.length();
-                    StrictMode.onSqliteObjectLeaked(
+                    Log.e(TAG, 
                         "Finalizing a Cursor that has not been deactivated or closed. " +
                         "database = " + mQuery.getDatabase().getLabel() +
                         ", table = " + mEditTable +

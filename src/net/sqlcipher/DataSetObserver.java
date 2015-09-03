@@ -21,7 +21,7 @@ package net.sqlcipher;
  * that are observed are {@link Cursor}s or {@link android.widget.Adapter}s.
  * DataSetObserver must be implemented by objects which are added to a DataSetObservable.
  */
-public abstract class DataSetObserver {
+public abstract class DataSetObserver extends android.database.DataSetObserver {
     /**
      * This method is called when the entire data set has changed,
      * most likely through a call to {@link Cursor#requery()} on a {@link Cursor}.

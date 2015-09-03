@@ -16,7 +16,7 @@
 
 package net.sqlcipher.database;
 
-import android.database.Cursor;
+import net.sqlcipher.Cursor;
 import net.sqlcipher.database.SQLiteDatabase.CursorFactory;
 import android.os.CancellationSignal;
 
@@ -27,7 +27,7 @@ import android.os.CancellationSignal;
  */
 public final class SQLiteDirectCursorDriver implements SQLiteCursorDriver {
     private final SQLiteDatabase mDatabase;
-    private final String mEditTable; 
+    private final String mEditTable;
     private final String mSql;
     private final CancellationSignal mCancellationSignal;
     private SQLiteQuery mQuery;

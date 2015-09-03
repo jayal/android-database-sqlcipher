@@ -18,8 +18,6 @@ package net.sqlcipher.database;
 
 import java.util.ArrayList;
 
-import android.os.Build;
-import android.os.SystemProperties;
 import android.util.Log;
 import android.util.Printer;
 
@@ -60,7 +58,7 @@ public final class SQLiteDebug {
      * True to enable database performance testing instrumentation.
      * @hide
      */
-    public static final boolean DEBUG_LOG_SLOW_QUERIES = Build.IS_DEBUGGABLE;
+    public static final boolean DEBUG_LOG_SLOW_QUERIES = false;
 
     private SQLiteDebug() {
     }
@@ -79,8 +77,7 @@ public final class SQLiteDebug {
      * @hide
      */
     public static final boolean shouldLogSlowQuery(long elapsedTimeMillis) {
-        int slowQueryMillis = SystemProperties.getInt("db.log.slow_query_threshold", -1);
-        return slowQueryMillis >= 0 && elapsedTimeMillis >= slowQueryMillis;
+        return false;
     }
 
     /**

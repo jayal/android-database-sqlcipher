@@ -71,11 +71,17 @@ static jint nativeReleaseMemory(JNIEnv* env, jclass clazz) {
     return sqlite3_release_memory(SOFT_HEAP_LIMIT);
 }
 
+static void nativeSetupEnv(JNIEnv* env, jclass clazz, jstring icuPathStr) {
+    char const * icuPathChars = env->GetStringUTFChars(icuPathStr, NULL);
+    setenv("SQLCIPHER_ICU_PREFIX", icuPathChars, 1);
+    env->ReleaseStringUTFChars(icuPathStr, icuPathChars);
+}
+
 static JNINativeMethod sMethods[] =
 {
     /* name, signature, funcPtr */
-    { "nativeReleaseMemory", "()I",
-            (void*)nativeReleaseMemory },
+    { "nativeReleaseMemory", "()I", (void*)nativeReleaseMemory },
+    { "nativeSetupEnv", "(Ljava/lang/String;)V", (void*)nativeSetupEnv },
 };
 
 int register_android_database_SQLiteGlobal(JNIEnv *env)

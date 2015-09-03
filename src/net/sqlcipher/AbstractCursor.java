@@ -19,10 +19,11 @@ package net.sqlcipher;
 import android.content.ContentResolver;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.UserHandle;
 import android.util.Log;
+import android.database.CharArrayBuffer;
+import android.database.ContentObservable;
+import android.database.ContentObserver;
 
-import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -320,11 +321,11 @@ public abstract class AbstractCursor implements CrossProcessCursor {
         }
     }
 
-    public void registerDataSetObserver(DataSetObserver observer) {
+    public void registerDataSetObserver(android.database.DataSetObserver observer) {
         mDataSetObservable.registerObserver(observer);
     }
 
-    public void unregisterDataSetObserver(DataSetObserver observer) {
+    public void unregisterDataSetObserver(android.database.DataSetObserver observer) {
         mDataSetObservable.unregisterObserver(observer);
     }
 
@@ -351,11 +352,6 @@ public abstract class AbstractCursor implements CrossProcessCursor {
      * specific row URI, or a base URI for a whole class of content.
      */
     public void setNotificationUri(ContentResolver cr, Uri notifyUri) {
-        setNotificationUri(cr, notifyUri, UserHandle.myUserId());
-    }
-
-    /** @hide - set the notification uri but with an observer for a particular user's view */
-    public void setNotificationUri(ContentResolver cr, Uri notifyUri, int userHandle) {
         synchronized (mSelfObserverLock) {
             mNotifyUri = notifyUri;
             mContentResolver = cr;
@@ -363,7 +359,7 @@ public abstract class AbstractCursor implements CrossProcessCursor {
                 mContentResolver.unregisterContentObserver(mSelfObserver);
             }
             mSelfObserver = new SelfContentObserver(this);
-            mContentResolver.registerContentObserver(mNotifyUri, true, mSelfObserver, userHandle);
+            mContentResolver.registerContentObserver(mNotifyUri, true, mSelfObserver);
             mSelfObserverRegistered = true;
         }
     }
@@ -437,28 +433,5 @@ public abstract class AbstractCursor implements CrossProcessCursor {
         } catch(Exception e) { }
     }
 
-    /**
-     * Cursors use this class to track changes others make to their URI.
-     */
-    protected static class SelfContentObserver extends ContentObserver {
-        WeakReference<AbstractCursor> mCursor;
-
-        public SelfContentObserver(AbstractCursor cursor) {
-            super(null);
-            mCursor = new WeakReference<AbstractCursor>(cursor);
-        }
-
-        @Override
-        public boolean deliverSelfNotifications() {
-            return false;
-        }
-
-        @Override
-        public void onChange(boolean selfChange) {
-            AbstractCursor cursor = mCursor.get();
-            if (cursor != null) {
-                cursor.onChange(false);
-            }
-        }
-    }
+    
 }

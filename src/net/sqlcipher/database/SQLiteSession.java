@@ -16,8 +16,8 @@
 
 package net.sqlcipher.database;
 
-import android.database.CursorWindow;
-import android.database.DatabaseUtils;
+import net.sqlcipher.CursorWindow;
+import net.sqlcipher.DatabaseUtils;
 import android.os.CancellationSignal;
 import android.os.OperationCanceledException;
 import android.os.ParcelFileDescriptor;
@@ -34,7 +34,7 @@ import android.os.ParcelFileDescriptor;
  * There is some advantage to knowing when a session is being used for
  * read-only purposes because the connection pool can optimize the use
  * of the available connections to permit multiple read-only operations
- * to execute in parallel whereas read-write operations may need to be serialized.
+ * to execute in parallel whereas read-write operations may need to be noserialized.
  * </p><p>
  * When <em>Write Ahead Logging (WAL)</em> is enabled, the database can
  * execute simultaneous read-only and read-write transactions, provided that
@@ -547,6 +547,16 @@ public final class SQLiteSession {
         beginTransactionUnchecked(transactionMode, listener, connectionFlags,
                 cancellationSignal); // might throw
         return true;
+    }
+    
+    public void changePassword(String password) {
+        // TODO: Jayal: Test this
+        acquireConnection("CHANGE_PASSWORD", SQLiteConnectionPool.CONNECTION_FLAG_PRIMARY_CONNECTION_AFFINITY, null); // might throw
+        try {
+            mConnection.changePassword(password); // might throw
+        } finally {
+            releaseConnection(); // might throw
+        }
     }
 
     /**

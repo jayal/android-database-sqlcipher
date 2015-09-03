@@ -68,7 +68,8 @@ public final class BulkCursorDescriptor implements Parcelable {
 
     public void readFromParcel(Parcel in) {
         cursor = BulkCursorNative.asInterface(in.readStrongBinder());
-        columnNames = in.readStringArray();
+        columnNames = new String[in.readInt()];
+        in.readStringArray(columnNames);
         wantsAllOnMoveCalls = in.readInt() != 0;
         count = in.readInt();
         if (in.readInt() != 0) {

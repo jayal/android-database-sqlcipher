@@ -16,6 +16,8 @@
 
 package net.sqlcipher;
 
+import android.database.ContentObserver;
+
 /**
  * A convience class that lets you present an array of Cursors as a single linear Cursor.
  * The schema of the cursors presented is entirely up to the creator of the MergeCursor, and
@@ -197,7 +199,7 @@ public class MergeCursor extends AbstractCursor
     }
     
     @Override
-    public void registerDataSetObserver(DataSetObserver observer) {
+    public void registerDataSetObserver(android.database.DataSetObserver observer) {
         int length = mCursors.length;
         for (int i = 0 ; i < length ; i++) {
             if (mCursors[i] != null) {
@@ -207,7 +209,7 @@ public class MergeCursor extends AbstractCursor
     }
     
     @Override
-    public void unregisterDataSetObserver(DataSetObserver observer) {
+    public void unregisterDataSetObserver(android.database.DataSetObserver observer) {
         int length = mCursors.length;
         for (int i = 0 ; i < length ; i++) {
             if (mCursors[i] != null) {

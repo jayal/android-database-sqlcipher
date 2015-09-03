@@ -21,7 +21,7 @@ package net.sqlcipher;
  * that provides methods for sending notifications to a list of
  * {@link DataSetObserver} objects.
  */
-public class DataSetObservable extends Observable<DataSetObserver> {
+public class DataSetObservable extends android.database.DataSetObservable {
     /**
      * Invokes {@link DataSetObserver#onChanged} on each observer.
      * Called when the contents of the data set have changed.  The recipient

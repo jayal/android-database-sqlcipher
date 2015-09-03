@@ -16,7 +16,7 @@
 
 package net.sqlcipher.database;
 
-import android.database.CursorWindow;
+import net.sqlcipher.CursorWindow;
 import android.os.CancellationSignal;
 import android.os.OperationCanceledException;
 import android.util.Log;

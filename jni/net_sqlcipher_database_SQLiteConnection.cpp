@@ -30,6 +30,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <unicode/utypes.h>
+#include <unicode/ucnv.h>
+#include <unicode/ucnv_err.h>
+
 #include <androidfw/CursorWindow.h>
 
 #include <sqlite3.h>
@@ -787,6 +791,137 @@ static void nativeResetCancel(JNIEnv* env, jobject clazz, jlong connectionPtr,
     }
 }
 
+void nativeSetKeyForChar(JNIEnv* env, jobject clazz, jlong connectionPtr, jcharArray jKey) {
+    char *keyUtf8 = 0;
+    int lenUtf8 = 0;
+    jchar* keyUtf16 = 0;
+    jsize lenUtf16 = 0;
+    UErrorCode status = U_ZERO_ERROR;
+    UConverter *encoding = 0;
+
+    SQLiteConnection* connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
+
+    keyUtf16 = env->GetCharArrayElements(jKey, 0);
+    lenUtf16 = env->GetArrayLength(jKey);
+
+    // no key, bailing out.
+    if (lenUtf16 == 0) {
+        goto done;
+    }
+
+    encoding = ucnv_open("UTF-8", &status);
+    if (U_FAILURE(status)) {
+        throw_sqlite3_exception(env,
+                "native_key_char: opening encoding converter failed");
+        goto done;
+    }
+
+    lenUtf8 = ucnv_fromUChars(encoding, NULL, 0, keyUtf16, lenUtf16, &status);
+    status = (status == U_BUFFER_OVERFLOW_ERROR) ? U_ZERO_ERROR : status;
+    if (U_FAILURE(status)) {
+        throw_sqlite3_exception(env, "native_key_char: utf8 length unknown");
+        goto done;
+    }
+
+    keyUtf8 = (char*) malloc(lenUtf8 * sizeof(char));
+    ucnv_fromUChars(encoding, keyUtf8, lenUtf8, keyUtf16, lenUtf16, &status);
+    if (U_FAILURE(status)) {
+        throw_sqlite3_exception(env, "native_key_char: utf8 conversion failed");
+        goto done;
+    }
+
+    if (sqlite3_key(connection->db, keyUtf8, lenUtf8) != SQLITE_OK) {
+        throw_sqlite3_exception(env, connection->db);
+    }
+
+    done: env->ReleaseCharArrayElements(jKey, keyUtf16, 0);
+    if (encoding != 0) {
+        ucnv_close(encoding);
+    }
+    if (keyUtf8 != 0) {
+        free(keyUtf8);
+    }
+}
+
+void nativeSetKeyForString(JNIEnv* env, jobject clazz, jlong connectionPtr, jstring jKey) {
+	SQLiteConnection* connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
+
+    char const * key = env->GetStringUTFChars(jKey, NULL);
+    jsize keyLen = env->GetStringUTFLength(jKey);
+
+    if (keyLen > 0) {
+        int status = sqlite3_key(connection->db, key, keyLen);
+        if (status != SQLITE_OK) {
+            throw_sqlite3_exception(env, connection->db);
+        }
+    }
+    env->ReleaseStringUTFChars(jKey, key);
+}
+
+void nativeUpdateKeyForChar(JNIEnv* env, jobject clazz, jlong connectionPtr, jcharArray jKey) {
+	SQLiteConnection* connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
+
+    char *keyUtf8 = 0;
+    int lenUtf8 = 0;
+    jchar* keyUtf16 = 0;
+    jsize lenUtf16 = 0;
+    UErrorCode status = U_ZERO_ERROR;
+    UConverter *encoding = 0;
+
+    keyUtf16 = env->GetCharArrayElements(jKey, 0);
+    lenUtf16 = env->GetArrayLength(jKey);
+
+    if (lenUtf16 == 0)
+        goto done;
+
+    encoding = ucnv_open("UTF-8", &status);
+    if (U_FAILURE(status)) {
+        throw_sqlite3_exception(env,
+                "native_key_char: opening encoding converter failed");
+        goto done;
+    }
+
+    lenUtf8 = ucnv_fromUChars(encoding, NULL, 0, keyUtf16, lenUtf16, &status);
+    status = (status == U_BUFFER_OVERFLOW_ERROR) ? U_ZERO_ERROR : status;
+    if (U_FAILURE(status)) {
+        throw_sqlite3_exception(env, "native_key_char: utf8 length unknown");
+        goto done;
+    }
+
+    keyUtf8 = (char*) malloc(lenUtf8 * sizeof(char));
+    ucnv_fromUChars(encoding, keyUtf8, lenUtf8, keyUtf16, lenUtf16, &status);
+    if (U_FAILURE(status)) {
+        throw_sqlite3_exception(env, "native_key_char: utf8 conversion failed");
+        goto done;
+    }
+
+    if (sqlite3_rekey(connection->db, keyUtf8, lenUtf8) != SQLITE_OK) {
+        throw_sqlite3_exception(env, connection->db);
+    }
+
+    done: env->ReleaseCharArrayElements(jKey, keyUtf16, 0);
+    if (encoding != 0) {
+        ucnv_close(encoding);
+    }
+    if (keyUtf8 != 0) {
+        free(keyUtf8);
+    }
+}
+
+void nativeUpdateKeyForString(JNIEnv* env, jobject clazz, jlong connectionPtr, jstring jKey) {
+	SQLiteConnection* connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
+
+    char const * key = env->GetStringUTFChars(jKey, NULL);
+    jsize keyLen = env->GetStringUTFLength(jKey);
+
+    if (keyLen > 0) {
+        int status = sqlite3_rekey(connection->db, key, keyLen);
+        if (status != SQLITE_OK) {
+            throw_sqlite3_exception(env, connection->db);
+        }
+    }
+    env->ReleaseStringUTFChars(jKey, key);
+}
 
 static JNINativeMethod sMethods[] =
 {
@@ -843,6 +978,10 @@ static JNINativeMethod sMethods[] =
             (void*)nativeCancel },
     { "nativeResetCancel", "(JZ)V",
             (void*)nativeResetCancel },
+    {"nativeSetKeyForChar", "(J[C)V", (void *)nativeSetKeyForChar},
+    {"nativeSetKeyForString", "(JLjava/lang/String;)V", (void *)nativeSetKeyForString},
+    {"nativeUpdateKeyForChar", "(J[C)V", (void *)nativeUpdateKeyForChar},
+    {"nativeUpdateKeyForString", "(JLjava/lang/String;)V", (void *)nativeUpdateKeyForString},
 };
 
 #define FIND_CLASS(var, className) \

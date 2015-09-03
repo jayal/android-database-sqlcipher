@@ -16,7 +16,7 @@
 
 package net.sqlcipher.database;
 
-import android.database.DatabaseUtils;
+import net.sqlcipher.DatabaseUtils;
 import android.os.CancellationSignal;
 
 import java.util.Arrays;

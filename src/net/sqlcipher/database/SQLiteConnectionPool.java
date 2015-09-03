@@ -16,14 +16,14 @@
 
 package net.sqlcipher.database;
 
-import dalvik.system.CloseGuard;
+import net.sqlcipher.CloseGuard;
 
 import net.sqlcipher.database.SQLiteDebug.DbStats;
 import android.os.CancellationSignal;
 import android.os.OperationCanceledException;
 import android.os.SystemClock;
 import android.util.Log;
-import android.util.PrefixPrinter;
+import net.sqlcipher.PrefixPrinter;
 import android.util.Printer;
 
 import java.io.Closeable;

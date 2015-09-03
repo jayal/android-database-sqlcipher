@@ -20,8 +20,7 @@ package net.sqlcipher.database;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.database.Cursor;
-import net.sqlcipher.database.SQLiteException;
+import net.sqlcipher.Cursor;
 import android.net.Uri;
 import android.util.Log;
 import android.widget.Toast;
@@ -40,13 +39,13 @@ public final class SqliteWrapper {
     }
 
     // FIXME: need to optimize this method.
-    private static boolean isLowMemory(SQLiteException e) {
+    private static boolean isLowMemory(android.database.sqlite.SQLiteException e) {
         return e.getMessage().equals(SQLITE_EXCEPTION_DETAIL_MESSAGE);
     }
 
-    public static void checkSQLiteException(Context context, SQLiteException e) {
+    public static void checkSQLiteException(Context context, android.database.sqlite.SQLiteException e) {
         if (isLowMemory(e)) {
-            Toast.makeText(context, com.android.internal.R.string.low_memory,
+            Toast.makeText(context, e.getMessage(),
                     Toast.LENGTH_SHORT).show();
         } else {
             throw e;
@@ -56,8 +55,8 @@ public final class SqliteWrapper {
     public static Cursor query(Context context, ContentResolver resolver, Uri uri,
             String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         try {
-            return resolver.query(uri, projection, selection, selectionArgs, sortOrder);
-        } catch (SQLiteException e) {
+            return (Cursor) resolver.query(uri, projection, selection, selectionArgs, sortOrder);
+        } catch (android.database.sqlite.SQLiteException e) {
             Log.e(TAG, "Catch a SQLiteException when query: ", e);
             checkSQLiteException(context, e);
             return null;
@@ -67,7 +66,7 @@ public final class SqliteWrapper {
     public static boolean requery(Context context, Cursor cursor) {
         try {
             return cursor.requery();
-        } catch (SQLiteException e) {
+        } catch (android.database.sqlite.SQLiteException e) {
             Log.e(TAG, "Catch a SQLiteException when requery: ", e);
             checkSQLiteException(context, e);
             return false;
@@ -77,7 +76,7 @@ public final class SqliteWrapper {
             ContentValues values, String where, String[] selectionArgs) {
         try {
             return resolver.update(uri, values, where, selectionArgs);
-        } catch (SQLiteException e) {
+        } catch (android.database.sqlite.SQLiteException e) {
             Log.e(TAG, "Catch a SQLiteException when update: ", e);
             checkSQLiteException(context, e);
             return -1;
@@ -88,7 +87,7 @@ public final class SqliteWrapper {
             String where, String[] selectionArgs) {
         try {
             return resolver.delete(uri, where, selectionArgs);
-        } catch (SQLiteException e) {
+        } catch (android.database.sqlite.SQLiteException e) {
             Log.e(TAG, "Catch a SQLiteException when delete: ", e);
             checkSQLiteException(context, e);
             return -1;
@@ -99,7 +98,7 @@ public final class SqliteWrapper {
             Uri uri, ContentValues values) {
         try {
             return resolver.insert(uri, values);
-        } catch (SQLiteException e) {
+        } catch (android.database.sqlite.SQLiteException e) {
             Log.e(TAG, "Catch a SQLiteException when insert: ", e);
             checkSQLiteException(context, e);
             return null;

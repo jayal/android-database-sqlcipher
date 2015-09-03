@@ -16,11 +16,12 @@
 
 package net.sqlcipher;
 
-import dalvik.system.CloseGuard;
+import net.sqlcipher.CloseGuard;
+import net.sqlcipher.database.SQLiteClosable;
+import net.sqlcipher.database.SQLiteException;
 
 import android.content.res.Resources;
-import android.database.sqlite.SQLiteClosable;
-import net.sqlcipher.database.SQLiteException;
+import android.database.CharArrayBuffer;
 import android.os.Binder;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -44,6 +45,10 @@ public class CursorWindow extends SQLiteClosable implements Parcelable {
 
     // This static member will be evaluated when first used.
     private static int sCursorWindowSize = -1;
+    
+    // When a database query is executed, the results retuned are paginated
+    // in pages of size (in KB) indicated by this value
+    private static final int CONFIG_CURSOR_WINDOW_SIZE = 2048;
 
     /**
      * The native CursorWindow object pointer.  (FOR INTERNAL USE ONLY)
@@ -101,7 +106,7 @@ public class CursorWindow extends SQLiteClosable implements Parcelable {
              * convert it to bytes here by multiplying with 1024.
              */
             sCursorWindowSize = Resources.getSystem().getInteger(
-                com.android.internal.R.integer.config_cursorWindowSize) * 1024;
+                    CONFIG_CURSOR_WINDOW_SIZE) * 1024;
         }
         mWindowPtr = nativeCreate(mName, sCursorWindowSize);
         if (mWindowPtr == 0) {

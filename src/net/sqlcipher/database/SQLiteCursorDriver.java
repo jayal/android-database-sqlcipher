@@ -16,7 +16,7 @@
 
 package net.sqlcipher.database;
 
-import android.database.Cursor;
+import net.sqlcipher.Cursor;
 import net.sqlcipher.database.SQLiteDatabase.CursorFactory;
 
 /**
