@@ -96,7 +96,7 @@ public final class SQLiteGlobal {
     /**
      * Sets the root directory to search for the ICU data file
      */
-    public static native void nativeSetupEnv(String icuPathStr);
+    private static native void nativeSetupEnv(String icuPathStr);
 
     private SQLiteGlobal() {
     }

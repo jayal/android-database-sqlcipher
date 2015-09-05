@@ -21,9 +21,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.database.CharArrayBuffer;
-import android.database.ContentObservable;
-import android.database.ContentObserver;
 
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -310,11 +309,11 @@ public abstract class AbstractCursor implements CrossProcessCursor {
         return getColumnNames()[columnIndex];
     }
 
-    public void registerContentObserver(ContentObserver observer) {
+    public void registerContentObserver(android.database.ContentObserver observer) {
         mContentObservable.registerObserver(observer);
     }
 
-    public void unregisterContentObserver(ContentObserver observer) {
+    public void unregisterContentObserver(android.database.ContentObserver observer) {
         // cursor will unregister all observers when it close
         if (!mClosed) {
             mContentObservable.unregisterObserver(observer);
@@ -433,5 +432,28 @@ public abstract class AbstractCursor implements CrossProcessCursor {
         } catch(Exception e) { }
     }
 
-    
+    /**
+     * Cursors use this class to track changes others make to their URI.
+     */
+    protected static class SelfContentObserver extends ContentObserver {
+        WeakReference<AbstractCursor> mCursor;
+
+        public SelfContentObserver(AbstractCursor cursor) {
+            super(null);
+            mCursor = new WeakReference<AbstractCursor>(cursor);
+        }
+
+        @Override
+        public boolean deliverSelfNotifications() {
+            return false;
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            AbstractCursor cursor = mCursor.get();
+            if (cursor != null) {
+                cursor.onChange(false);
+            }
+        }
+    }
 }

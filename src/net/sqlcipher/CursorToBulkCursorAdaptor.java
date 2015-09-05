@@ -18,16 +18,14 @@ package net.sqlcipher;
 
 import android.net.Uri;
 import android.os.*;
-import android.database.ContentObserver;
-
 
 /**
  * Wraps a BulkCursor around an existing Cursor making it remotable.
  * <p>
- * If the wrapped cursor returns non-null from {@link CrossProcessCursor#getWindow}
- * then it is assumed to own the window.  Otherwise, the adaptor provides a
- * window to be filled and ensures it gets closed as needed during deactivation
- * and requeries.
+ * If the wrapped cursor returns non-null from
+ * {@link CrossProcessCursor#getWindow} then it is assumed to own the window.
+ * Otherwise, the adaptor provides a window to be filled and ensures it gets
+ * closed as needed during deactivation and requeries.
  * </p>
  *
  * {@hide}
@@ -41,15 +39,15 @@ public final class CursorToBulkCursorAdaptor extends BulkCursorNative
     private ContentObserverProxy mObserver;
 
     /**
-     * The cursor that is being adapted.
-     * This field is set to null when the cursor is closed.
+     * The cursor that is being adapted. This field is set to null when the
+     * cursor is closed.
      */
     private CrossProcessCursor mCursor;
 
     /**
-     * The cursor window that was filled by the cross process cursor in the
-     * case where the cursor does not support getWindow.
-     * This field is only ever non-null when the window has actually be filled.
+     * The cursor window that was filled by the cross process cursor in the case
+     * where the cursor does not support getWindow. This field is only ever
+     * non-null when the window has actually be filled.
      */
     private CursorWindow mFilledWindow;
 
@@ -89,7 +87,7 @@ public final class CursorToBulkCursorAdaptor extends BulkCursorNative
     public CursorToBulkCursorAdaptor(Cursor cursor, IContentObserver observer,
             String providerName) {
         if (cursor instanceof CrossProcessCursor) {
-            mCursor = (CrossProcessCursor)cursor;
+            mCursor = (CrossProcessCursor) cursor;
         } else {
             mCursor = new CrossProcessCursorWrapper(cursor);
         }
@@ -131,8 +129,8 @@ public final class CursorToBulkCursorAdaptor extends BulkCursorNative
     }
 
     /**
-     * Returns an object that contains sufficient metadata to reconstruct
-     * the cursor remotely.  May throw if an error occurs when executing the query
+     * Returns an object that contains sufficient metadata to reconstruct the
+     * cursor remotely. May throw if an error occurs when executing the query
      * and obtaining the row count.
      */
     public BulkCursorDescriptor getBulkCursorDescriptor() {
@@ -230,7 +228,7 @@ public final class CursorToBulkCursorAdaptor extends BulkCursorNative
             } catch (IllegalStateException e) {
                 IllegalStateException leakProgram = new IllegalStateException(
                         mProviderName + " Requery misuse db, mCursor isClosed:" +
-                        mCursor.isClosed(), e);
+                                mCursor.isClosed(), e);
                 throw leakProgram;
             }
 
@@ -241,10 +239,13 @@ public final class CursorToBulkCursorAdaptor extends BulkCursorNative
     }
 
     /**
-     * Create a ContentObserver from the observer and register it as an observer on the
-     * underlying cursor.
-     * @param observer the IContentObserver that wants to monitor the cursor
-     * @throws IllegalStateException if an observer is already registered
+     * Create a ContentObserver from the observer and register it as an observer
+     * on the underlying cursor.
+     * 
+     * @param observer
+     *            the IContentObserver that wants to monitor the cursor
+     * @throws IllegalStateException
+     *             if an observer is already registered
      */
     private void createAndRegisterObserverProxyLocked(IContentObserver observer) {
         if (mObserver != null) {

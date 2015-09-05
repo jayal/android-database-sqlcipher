@@ -284,6 +284,7 @@ public final class SQLiteConnection implements CancellationSignal.OnCancelListen
         setWalModeFromConfiguration();
         setJournalSizeLimit();
         setAutoCheckpointInterval();
+        // FIXME: Jayal
         setLocaleFromConfiguration();
 
         // Register custom functions.

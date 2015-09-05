@@ -17,7 +17,6 @@
 package net.sqlcipher;
 
 import android.content.ContentResolver;
-import android.database.ContentObserver;
 import android.database.CharArrayBuffer;
 import android.net.Uri;
 import android.os.Bundle;
@@ -176,7 +175,7 @@ public class CursorWrapper implements Cursor {
         return mCursor.moveToPrevious();
     }
 
-    public void registerContentObserver(ContentObserver observer) {
+    public void registerContentObserver(android.database.ContentObserver observer) {
         mCursor.registerContentObserver(observer);   
     }
 
@@ -200,7 +199,7 @@ public class CursorWrapper implements Cursor {
         return mCursor.getNotificationUri();
     }
 
-    public void unregisterContentObserver(ContentObserver observer) {
+    public void unregisterContentObserver(android.database.ContentObserver observer) {
         mCursor.unregisterContentObserver(observer);        
     }
 

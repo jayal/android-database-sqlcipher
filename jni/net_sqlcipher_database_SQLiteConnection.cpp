@@ -112,7 +112,6 @@ static int sqliteProgressHandlerCallback(void* data) {
     return connection->canceled;
 }
 
-
 static jlong nativeOpen(JNIEnv* env, jclass clazz, jstring pathStr, jint openFlags,
         jstring labelStr, jboolean enableTrace, jboolean enableProfile) {
     int sqliteFlags;
@@ -157,7 +156,7 @@ static jlong nativeOpen(JNIEnv* env, jclass clazz, jstring pathStr, jint openFla
     // Register custom Android functions.
     err = register_android_functions(db, UTF16_STORAGE);
     if (err) {
-        throw_sqlite3_exception(env, db, "Could not register Android SQL functions.");
+    	throw_sqlite3_exception(env, db, "Could not register Android SQL functions.");
         sqlite3_close(db);
         return 0;
     }

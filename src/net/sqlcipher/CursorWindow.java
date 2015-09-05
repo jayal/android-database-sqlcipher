@@ -105,8 +105,7 @@ public class CursorWindow extends SQLiteClosable implements Parcelable {
             /** The cursor window size. resource xml file specifies the value in kB.
              * convert it to bytes here by multiplying with 1024.
              */
-            sCursorWindowSize = Resources.getSystem().getInteger(
-                    CONFIG_CURSOR_WINDOW_SIZE) * 1024;
+            sCursorWindowSize = CONFIG_CURSOR_WINDOW_SIZE * 1024;
         }
         mWindowPtr = nativeCreate(mName, sCursorWindowSize);
         if (mWindowPtr == 0) {

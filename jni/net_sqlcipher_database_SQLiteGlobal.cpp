@@ -77,19 +77,32 @@ static void nativeSetupEnv(JNIEnv* env, jclass clazz, jstring icuPathStr) {
     env->ReleaseStringUTFChars(icuPathStr, icuPathChars);
 }
 
-static JNINativeMethod sMethods[] =
-{
+static JNINativeMethod sMethods[] = {
     /* name, signature, funcPtr */
     { "nativeReleaseMemory", "()I", (void*)nativeReleaseMemory },
     { "nativeSetupEnv", "(Ljava/lang/String;)V", (void*)nativeSetupEnv },
 };
 
-int register_android_database_SQLiteGlobal(JNIEnv *env)
-{
+int register_android_database_SQLiteGlobal(JNIEnv *env) {
     sqliteInitialize();
 
     return AndroidRuntime::registerNativeMethods(env, "net/sqlcipher/database/SQLiteGlobal",
             sMethods, NELEM(sMethods));
+}
+
+extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved) {
+    JNIEnv* env;
+    if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
+        return -1;
+    }
+
+    // Register methods with env->RegisterNatives.
+    register_android_database_SQLiteGlobal(env);
+    register_android_database_SQLiteConnection(env);
+    register_android_database_CursorWindow(env);
+    //register_android_database_SQLiteDebug(env);
+
+    return JNI_VERSION_1_6;
 }
 
 } // namespace android

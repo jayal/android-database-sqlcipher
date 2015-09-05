@@ -269,12 +269,12 @@ public final class SQLiteDatabase extends SQLiteClosable {
         OutputStream out = null;
         ZipInputStream in = null;
         File icuDir = new File(workingDir, "icu");
-        File icuDataFile = new File(icuDir, "icudt46l.dat");
+        File icuDataFile = new File(icuDir, "icudt53l.dat");
         try {
             if (!icuDir.exists())
                 icuDir.mkdirs();
             if (!icuDataFile.exists()) {
-                in = new ZipInputStream(context.getAssets().open("icudt46l.zip"));
+                in = new ZipInputStream(context.getAssets().open("icudt53l.zip"));
                 in.getNextEntry();
                 out = new FileOutputStream(icuDataFile);
                 byte[] buf = new byte[1024];
@@ -314,7 +314,7 @@ public final class SQLiteDatabase extends SQLiteClosable {
         System.loadLibrary("sqlcipher_android");
         System.loadLibrary("database_sqlcipher");
 
-        boolean systemICUFileExists = new File("/system/usr/icu/icudt46l.dat").exists();
+        boolean systemICUFileExists = new File("/system/usr/icu/icudt53l.dat").exists();
 
         String icuRootPath = systemICUFileExists ? "/system/usr" : workingDir.getAbsolutePath();
         SQLiteGlobal.setupEnv(icuRootPath);

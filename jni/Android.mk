@@ -23,9 +23,9 @@ LOCAL_SRC_FILES:= \
     net_sqlcipher_CursorWindow.cpp \
 	net_sqlcipher_database_SQLiteCommon.cpp \
 	net_sqlcipher_database_SQLiteConnection.cpp \
-	net_sqlcipher_database_SQLiteDebug.cpp \
 	net_sqlcipher_database_SQLiteGlobal.cpp \
 	CursorWindow.cpp
+	# net_sqlcipher_database_SQLiteDebug.cpp
 
 LOCAL_C_INCLUDES += \
 	$(JNI_H_INCLUDE) \
@@ -39,6 +39,7 @@ LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/include \
 	$(EXTERNAL_PATH)/platform-frameworks-base/include \
 	$(EXTERNAL_PATH)/icu4c/common \
+	$(EXTERNAL_PATH)/icu4c/i18n \
 	$(EXTERNAL_PATH)/platform-system-core/include
 
 LOCAL_SHARED_LIBRARIES := \
