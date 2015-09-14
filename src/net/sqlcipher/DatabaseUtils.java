@@ -34,6 +34,7 @@ import android.os.ParcelFileDescriptor;
 import android.text.TextUtils;
 import android.util.Log;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.text.Collator;
@@ -1356,6 +1357,9 @@ public class DatabaseUtils {
      */
     static public void createDbFromSqlStatements(
             Context context, String dbName, String password, int dbVersion, String sqlStatements) {
+        File dbFile = context.getDatabasePath(dbName);
+        File dbParentDir = dbFile.getParentFile();
+        dbParentDir.mkdirs();
         SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(dbName, password, null);
         // TODO: this is not quite safe since it assumes that all semicolons at the end of a line
         // terminate statements. It is possible that a text field contains ;\n. We will have to fix

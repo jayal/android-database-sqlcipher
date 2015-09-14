@@ -78,6 +78,7 @@ clean:
 	-rm ${LIBRARY_ROOT}/armeabi/libdatabase_sqlcipher.so
 	-rm ${LIBRARY_ROOT}/armeabi/libstlport_shared.so
 	-rm ${LIBRARY_ROOT}/sqlcipher.jar
+	-rm ${LIBRARY_ROOT}/sqlcipher-javadoc.jar
 	-rm ${LIBRARY_ROOT}/x86/libsqlcipher_android.so
 	-rm ${LIBRARY_ROOT}/x86/libdatabase_sqlcipher.so
 	-rm ${LIBRARY_ROOT}/x86/libstlport_shared.so

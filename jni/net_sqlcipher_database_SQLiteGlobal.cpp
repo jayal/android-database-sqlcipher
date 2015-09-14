@@ -25,6 +25,7 @@
 
 #include "android_database_SQLiteCommon.h"
 #include "android_util_Log.h"
+#include "sqlcipher_loading.h"
 
 namespace android {
 

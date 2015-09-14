@@ -274,17 +274,24 @@ public final class SQLiteConnection implements CancellationSignal.OnCancelListen
                 mConfiguration.label,
                 SQLiteDebug.DEBUG_SQL_STATEMENTS, SQLiteDebug.DEBUG_SQL_TIME);
 
+        SQLiteDatabase dbHandle = mConfiguration.database.get();
+//        if (dbHandle != null && mConfiguration.databaseHook != null) {
+//            mConfiguration.databaseHook.preKey(dbHandle);
+//        }
+        
         if (mConfiguration.password != null) {
-            // TODO: Jayal - Add method to prevent pragma keying attack
             nativeSetKeyForChar(mConnectionPtr, mConfiguration.password.toCharArray());
         }
+        
+//        if (dbHandle != null && mConfiguration.databaseHook != null) {
+//            mConfiguration.databaseHook.postKey(dbHandle);
+//        }
 
         setPageSize();
         setForeignKeyModeFromConfiguration();
         setWalModeFromConfiguration();
         setJournalSizeLimit();
         setAutoCheckpointInterval();
-        // FIXME: Jayal
         setLocaleFromConfiguration();
 
         // Register custom functions.
@@ -320,6 +327,7 @@ public final class SQLiteConnection implements CancellationSignal.OnCancelListen
             final long newValue = SQLiteGlobal.getDefaultPageSize();
             long value = executeForLong("PRAGMA page_size", null, null);
             if (value != newValue) {
+                execute("PRAGMA cipher_page_size=" + newValue, null, null);
                 execute("PRAGMA page_size=" + newValue, null, null);
             }
         }

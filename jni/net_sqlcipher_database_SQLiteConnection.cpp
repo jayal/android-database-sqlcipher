@@ -161,6 +161,8 @@ static jlong nativeOpen(JNIEnv* env, jclass clazz, jstring pathStr, jint openFla
         return 0;
     }
 
+    sqlite3_enable_load_extension(db, 1);
+
     // Create wrapper object.
     SQLiteConnection* connection = new SQLiteConnection(db, openFlags, path, label);
 

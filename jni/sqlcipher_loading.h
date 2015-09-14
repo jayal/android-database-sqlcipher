@@ -1,4 +1,4 @@
-/* //device/libs/include/android_runtime/sqlite3_exception.h
+/*
 **
 ** Copyright 2007, The Android Open Source Project
 **
@@ -22,21 +22,15 @@
 
 #include <sqlite3.h>
 
-namespace sqlcipher {
+namespace android {
 
-int register_android_database_SQLiteDatabase(JNIEnv *env);
+int register_android_database_SQLiteGlobal(JNIEnv *env);
 
-int register_android_database_SQLiteCompiledSql(JNIEnv * env);
-
-int register_android_database_SQLiteQuery(JNIEnv * env);
-
-int register_android_database_SQLiteProgram(JNIEnv * env);
-
-int register_android_database_SQLiteStatement(JNIEnv * env);
-
-int register_android_database_SQLiteDebug(JNIEnv *env);
+int register_android_database_SQLiteConnection(JNIEnv *env);
 
 int register_android_database_CursorWindow(JNIEnv *env);
+
+int register_android_database_SQLiteDebug(JNIEnv *env);
 
 }
 

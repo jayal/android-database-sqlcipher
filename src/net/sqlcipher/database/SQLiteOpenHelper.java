@@ -16,9 +16,13 @@
 
 package net.sqlcipher.database;
 
-import android.content.Context;
+import java.io.File;
+import java.lang.reflect.Method;
+
 import net.sqlcipher.DatabaseErrorHandler;
+import net.sqlcipher.DefaultDatabaseErrorHandler;
 import net.sqlcipher.database.SQLiteDatabase.CursorFactory;
+import android.content.Context;
 import android.util.Log;
 
 /**
@@ -65,7 +69,10 @@ public abstract class SQLiteOpenHelper {
     private SQLiteDatabase mDatabase;
     private boolean mIsInitializing;
     private boolean mEnableWriteAheadLogging;
+    private final SQLiteDatabaseHook mHook;
     private final DatabaseErrorHandler mErrorHandler;
+
+    private File mDatabasesDir;
 
     /**
      * Create a helper object to create, open, and/or manage a database. This
@@ -86,7 +93,11 @@ public abstract class SQLiteOpenHelper {
      *            be used to downgrade the database
      */
     public SQLiteOpenHelper(Context context, String name, CursorFactory factory, int version) {
-        this(context, name, factory, version, null);
+        this(context, name, factory, version, null, new DefaultDatabaseErrorHandler());
+    }
+
+    public SQLiteOpenHelper(Context context, String name, CursorFactory factory, int version, SQLiteDatabaseHook hook) {
+        this(context, name, factory, version, hook, new DefaultDatabaseErrorHandler());
     }
 
     /**
@@ -116,7 +127,7 @@ public abstract class SQLiteOpenHelper {
      *            handler.
      */
     public SQLiteOpenHelper(Context context, String name, CursorFactory factory, int version,
-            DatabaseErrorHandler errorHandler) {
+            SQLiteDatabaseHook hook, DatabaseErrorHandler errorHandler) {
         if (version < 1)
             throw new IllegalArgumentException("Version must be >= 1, was " + version);
 
@@ -124,6 +135,7 @@ public abstract class SQLiteOpenHelper {
         mName = name;
         mFactory = factory;
         mNewVersion = version;
+        mHook = hook;
         mErrorHandler = errorHandler;
     }
 
@@ -256,11 +268,18 @@ public abstract class SQLiteOpenHelper {
                     if (DEBUG_STRICT_READONLY && !writable) {
                         final String path = mContext.getDatabasePath(mName).getPath();
                         db = SQLiteDatabase.openDatabase(path, password, mFactory,
-                                SQLiteDatabase.OPEN_READONLY, mErrorHandler);
+                                SQLiteDatabase.OPEN_READONLY, mHook, mErrorHandler);
                     } else {
                         int flags = SQLiteDatabase.CREATE_IF_NECESSARY
                                 | (mEnableWriteAheadLogging ? SQLiteDatabase.ENABLE_WRITE_AHEAD_LOGGING : 0);
-                        db = SQLiteDatabase.openDatabase(mName, password, mFactory, flags, mErrorHandler);
+                        String path = mContext.getDatabasePath(mName).getPath();
+
+                        File dbPathFile = new File(path);
+                        if (!dbPathFile.exists()) {
+                            dbPathFile.getParentFile().mkdirs();
+                        }
+                        db = SQLiteDatabase.openDatabase(path, password, mFactory, flags, mHook,
+                                mErrorHandler);
                     }
                 } catch (SQLiteException ex) {
                     if (writable) {
@@ -270,7 +289,7 @@ public abstract class SQLiteOpenHelper {
                             + " for writing (will try read-only):", ex);
                     final String path = mContext.getDatabasePath(mName).getPath();
                     db = SQLiteDatabase.openDatabase(path, password, mFactory,
-                            SQLiteDatabase.OPEN_READONLY, mErrorHandler);
+                            SQLiteDatabase.OPEN_READONLY, mHook, mErrorHandler);
                 }
             }
 
@@ -430,4 +449,5 @@ public abstract class SQLiteOpenHelper {
      */
     public void onOpen(SQLiteDatabase db) {
     }
+
 }

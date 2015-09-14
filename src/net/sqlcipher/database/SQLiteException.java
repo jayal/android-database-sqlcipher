@@ -16,7 +16,7 @@
 
 package net.sqlcipher.database;
 
-import android.database.SQLException;
+import net.sqlcipher.SQLException;
 
 /**
  * A SQLite exception that indicates there was an error with SQL parsing or execution.
