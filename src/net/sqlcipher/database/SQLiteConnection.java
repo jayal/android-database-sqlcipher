@@ -274,19 +274,10 @@ public final class SQLiteConnection implements CancellationSignal.OnCancelListen
                 mConfiguration.label,
                 SQLiteDebug.DEBUG_SQL_STATEMENTS, SQLiteDebug.DEBUG_SQL_TIME);
 
-        SQLiteDatabase dbHandle = mConfiguration.database.get();
-//        if (dbHandle != null && mConfiguration.databaseHook != null) {
-//            mConfiguration.databaseHook.preKey(dbHandle);
-//        }
-        
         if (mConfiguration.password != null) {
             nativeSetKeyForChar(mConnectionPtr, mConfiguration.password.toCharArray());
         }
         
-//        if (dbHandle != null && mConfiguration.databaseHook != null) {
-//            mConfiguration.databaseHook.postKey(dbHandle);
-//        }
-
         setPageSize();
         setForeignKeyModeFromConfiguration();
         setWalModeFromConfiguration();

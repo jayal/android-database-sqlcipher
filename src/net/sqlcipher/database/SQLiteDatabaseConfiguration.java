@@ -16,7 +16,6 @@
 
 package net.sqlcipher.database;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -58,10 +57,6 @@ public final class SQLiteDatabaseConfiguration {
     public final String label;
     
     public final String password;
-    
-    public final SQLiteDatabaseHook databaseHook; 
-    
-    public final WeakReference<SQLiteDatabase> database;
 
     /**
      * The flags used to open the database.
@@ -103,16 +98,14 @@ public final class SQLiteDatabaseConfiguration {
      * @param path The database path.
      * @param openFlags Open flags for the database, such as {@link SQLiteDatabase#OPEN_READWRITE}.
      */
-    public SQLiteDatabaseConfiguration(SQLiteDatabase database, String path, String password, SQLiteDatabaseHook databaseHook, int openFlags) {
+    public SQLiteDatabaseConfiguration(String path, String password, int openFlags) {
         if (path == null) {
             throw new IllegalArgumentException("path must not be null.");
         }
 
-        this.database = new WeakReference<SQLiteDatabase>(database);
         this.path = path;
         label = stripPathForLogs(path);
         this.password = password;
-        this.databaseHook = databaseHook;
         this.openFlags = openFlags;
 
         // Set default values for optional parameters.
@@ -130,10 +123,8 @@ public final class SQLiteDatabaseConfiguration {
             throw new IllegalArgumentException("other must not be null.");
         }
 
-        this.database = other.database;
         this.path = other.path;
         this.label = other.label;
-        this.databaseHook = other.databaseHook;
         this.password = other.password;
         updateParametersFrom(other);
     }

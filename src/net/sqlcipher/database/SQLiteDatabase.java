@@ -342,7 +342,7 @@ public final class SQLiteDatabase extends SQLiteClosable {
             SQLiteDatabaseHook databaseHook, DatabaseErrorHandler errorHandler) {
         mCursorFactory = cursorFactory;
         mErrorHandler = errorHandler != null ? errorHandler : new DefaultDatabaseErrorHandler();
-        mConfigurationLocked = new SQLiteDatabaseConfiguration(this, path, password, databaseHook, openFlags);
+        mConfigurationLocked = new SQLiteDatabaseConfiguration(path, password, openFlags);
     }
 
     @Override

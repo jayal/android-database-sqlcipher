@@ -550,7 +550,6 @@ public final class SQLiteSession {
     }
     
     public void changePassword(String password) {
-        // TODO: Jayal: Test this
         acquireConnection("CHANGE_PASSWORD", SQLiteConnectionPool.CONNECTION_FLAG_PRIMARY_CONNECTION_AFFINITY, null); // might throw
         try {
             mConnection.changePassword(password); // might throw
