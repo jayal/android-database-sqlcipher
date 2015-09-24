@@ -13,3 +13,5 @@ external/sqlcipher
 libs/
 jar/
 .idea/
+.settings/
+
