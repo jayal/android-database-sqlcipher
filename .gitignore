@@ -12,4 +12,4 @@ external/openssl
 external/sqlcipher
 libs/
 jar/
-
+.idea/
