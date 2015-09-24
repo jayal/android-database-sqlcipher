@@ -16,16 +16,15 @@
 
 package net.sqlcipher.database;
 
-import android.content.ContentValues;
-import android.content.Context;
-import net.sqlcipher.Cursor;
-import net.sqlcipher.database.SQLiteDatabase;
-import android.test.AndroidTestCase;
-import android.test.suitebuilder.annotation.LargeTest;
-
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
+
+import net.sqlcipher.Cursor;
+import android.content.ContentValues;
+import android.content.Context;
+import android.test.AndroidTestCase;
+import android.test.suitebuilder.annotation.LargeTest;
 
 public class SQLiteCursorTest extends AndroidTestCase {
     private SQLiteDatabase mDatabase;
