@@ -42,6 +42,7 @@ public class SQLiteDatabaseTest extends AndroidTestCase {
     private boolean mTransactionListenerOnRollbackCalled;
 
     private static final String DATABASE_FILE_NAME = "database_test.db";
+    private static final String DB_PASSWORD = "abcd1234";
     private static final String TABLE_NAME = "test";
     private static final int COLUMN_ID_INDEX = 0;
     private static final int COLUMN_NAME_INDEX = 1;
@@ -64,7 +65,7 @@ public class SQLiteDatabaseTest extends AndroidTestCase {
         mDatabaseFile = getContext().getDatabasePath(DATABASE_FILE_NAME);
         mDatabaseDir = mDatabaseFile.getParent();
         mDatabaseFile.getParentFile().mkdirs(); // directory may not exist
-        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile, "", null);
+        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile, DB_PASSWORD, null);
         assertNotNull(mDatabase);
 
         mTransactionListenerOnBeginCalled = false;
@@ -87,7 +88,7 @@ public class SQLiteDatabaseTest extends AndroidTestCase {
             }
         };
 
-        SQLiteDatabase db = SQLiteDatabase.openDatabase(mDatabaseFilePath, "",
+        SQLiteDatabase db = SQLiteDatabase.openDatabase(mDatabaseFilePath, DB_PASSWORD,
                 factory, SQLiteDatabase.CREATE_IF_NECESSARY);
         assertNotNull(db);
         db.close();
@@ -95,13 +96,13 @@ public class SQLiteDatabaseTest extends AndroidTestCase {
         File dbFile = new File(mDatabaseDir, "database_test12345678.db");
         dbFile.delete();
         assertFalse(dbFile.exists());
-        db = SQLiteDatabase.openOrCreateDatabase(dbFile.getPath(), "", factory);
+        db = SQLiteDatabase.openOrCreateDatabase(dbFile.getPath(), DB_PASSWORD, factory);
         assertNotNull(db);
         db.close();
         dbFile.delete();
 
         dbFile = new File(mDatabaseDir, DATABASE_FILE_NAME);
-        db = SQLiteDatabase.openOrCreateDatabase(dbFile, "", factory);
+        db = SQLiteDatabase.openOrCreateDatabase(dbFile, DB_PASSWORD, factory);
         assertNotNull(db);
         db.close();
         dbFile.delete();
@@ -298,7 +299,7 @@ public class SQLiteDatabaseTest extends AndroidTestCase {
         }
         SQLiteDatabase database = null;
         try {
-            database = SQLiteDatabase.openOrCreateDatabase(databaseFile.getPath(), "", null);
+            database = SQLiteDatabase.openOrCreateDatabase(databaseFile.getPath(), DB_PASSWORD, null);
 
             long initialValue = database.getPageSize();
             // check that this does not throw an exception
@@ -625,7 +626,7 @@ public class SQLiteDatabaseTest extends AndroidTestCase {
 
         SQLiteDatabase database = null;
         try {
-            database = SQLiteDatabase.openDatabase(mDatabaseFilePath, "", null,
+            database = SQLiteDatabase.openDatabase(mDatabaseFilePath, DB_PASSWORD, null,
                     SQLiteDatabase.OPEN_READONLY);
             assertTrue(database.isReadOnly());
         } finally {
@@ -1275,7 +1276,7 @@ public class SQLiteDatabaseTest extends AndroidTestCase {
         // redo setup to create WAL enabled database
         mDatabase.close();
         new File(mDatabase.getPath()).delete();
-        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), "", null, null);
+        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), DB_PASSWORD, null, null);
         boolean rslt = mDatabase.enableWriteAheadLogging();
         assertTrue(rslt);
         assertNotNull(mDatabase);
@@ -1363,7 +1364,7 @@ public class SQLiteDatabaseTest extends AndroidTestCase {
         // redo setup to create WAL enabled database
         mDatabase.close();
         new File(mDatabase.getPath()).delete();
-        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), "", null, null);
+        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), DB_PASSWORD, null);
 
         // attach a database and call enableWriteAheadLogging - should not be allowed
         mDatabase.execSQL("attach database ':memory:' as memoryDb");
@@ -1401,7 +1402,7 @@ public class SQLiteDatabaseTest extends AndroidTestCase {
     public void testEnableThenDisableWriteAheadLoggingUsingOpenFlag() {
         mDatabase.close();
         new File(mDatabase.getPath()).delete();
-        mDatabase = SQLiteDatabase.openDatabase(mDatabaseFile.getPath(), "", null,
+        mDatabase = SQLiteDatabase.openDatabase(mDatabaseFile.getPath(), DB_PASSWORD, null,
                 SQLiteDatabase.CREATE_IF_NECESSARY | SQLiteDatabase.ENABLE_WRITE_AHEAD_LOGGING,
                 null);
         assertTrue(mDatabase.isWriteAheadLoggingEnabled());

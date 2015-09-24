@@ -31,7 +31,6 @@ import android.test.suitebuilder.annotation.MediumTest;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.util.Log;
 import android.util.Pair;
-
 import junit.framework.Assert;
 
 import java.io.File;
@@ -49,6 +48,7 @@ public class DatabaseGeneralTest extends AndroidTestCase implements PerformanceT
     private static final String PHONE_NUMBER = "16175551212";
 
     private static final int CURRENT_DATABASE_VERSION = 42;
+    private static final String DB_PASSWORD = "abcd1234";
     private SQLiteDatabase mDatabase;
     private File mDatabaseFile;
 
@@ -61,7 +61,7 @@ public class DatabaseGeneralTest extends AndroidTestCase implements PerformanceT
         if (mDatabaseFile.exists()) {
             mDatabaseFile.delete();
         }
-        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), "", null);
+        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), DB_PASSWORD, null);
         assertNotNull(mDatabase);
         mDatabase.setVersion(CURRENT_DATABASE_VERSION);
     }
@@ -1068,7 +1068,7 @@ public class DatabaseGeneralTest extends AndroidTestCase implements PerformanceT
         }
 
         // create an in-memory database. and corruption handler shouldn't try to delete it
-        SQLiteDatabase memoryDb = SQLiteDatabase.openOrCreateDatabase(":memory:", "", null);
+        SQLiteDatabase memoryDb = SQLiteDatabase.openOrCreateDatabase(":memory:", DB_PASSWORD, null);
         assertNotNull(memoryDb);
         memoryDb.close();
         assertFalse(memoryDb.isOpen());
@@ -1079,7 +1079,7 @@ public class DatabaseGeneralTest extends AndroidTestCase implements PerformanceT
         }
 
         // create a database, keep it open, call corruption handler. database file should be deleted
-        SQLiteDatabase dbObj = SQLiteDatabase.openOrCreateDatabase(mDatabase.getPath(), "", null);
+        SQLiteDatabase dbObj = SQLiteDatabase.openOrCreateDatabase(mDatabase.getPath(), DB_PASSWORD, null);
         assertTrue(dbfile.exists());
         assertNotNull(dbObj);
         assertTrue(dbObj.isOpen());
@@ -1096,7 +1096,7 @@ public class DatabaseGeneralTest extends AndroidTestCase implements PerformanceT
         // call corruption handler. database files including the one for attached database # 2
         // should be deleted
         String attachedDb1File = mDatabase.getPath() + "1";
-        dbObj = SQLiteDatabase.openOrCreateDatabase(mDatabase.getPath(), "", null);
+        dbObj = SQLiteDatabase.openOrCreateDatabase(mDatabase.getPath(), DB_PASSWORD, null);
         dbObj.execSQL("ATTACH DATABASE ':memory:' as memoryDb");
         dbObj.execSQL("ATTACH DATABASE '" + attachedDb1File + "' as attachedDb1");
         assertTrue(dbfile.exists());
@@ -1119,7 +1119,7 @@ public class DatabaseGeneralTest extends AndroidTestCase implements PerformanceT
         for (int i = 0; i < N; i++) {
             attachedDbFiles.add(mDatabase.getPath() + i);
         }
-        dbObj = SQLiteDatabase.openOrCreateDatabase(mDatabase.getPath(), "", null);
+        dbObj = SQLiteDatabase.openOrCreateDatabase(mDatabase.getPath(), DB_PASSWORD, null);
         dbObj.execSQL("ATTACH DATABASE ':memory:' as memoryDb");
         for (int i = 0; i < N; i++) {
             dbObj.execSQL("ATTACH DATABASE '" + attachedDbFiles.get(i) + "' as attachedDb" + i);

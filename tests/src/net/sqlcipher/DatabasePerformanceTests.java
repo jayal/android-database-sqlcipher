@@ -17,7 +17,6 @@
 package net.sqlcipher;
 
 import junit.framework.Assert;
-
 import android.content.ContentValues;
 import android.content.Context;
 import net.sqlcipher.database.SQLiteDatabase;
@@ -76,6 +75,7 @@ public class DatabasePerformanceTests {
     public static abstract class PerformanceBase implements TestCase,
             PerformanceTestCase {
         protected static final int CURRENT_DATABASE_VERSION = 42;
+        private static final String DB_PASSWORD = "abcd1234";
         protected SQLiteDatabase mDatabase;
         protected File mDatabaseFile;
         protected Context mContext;
@@ -87,7 +87,7 @@ public class DatabasePerformanceTests {
             if (mDatabaseFile.exists()) {
                 mDatabaseFile.delete();
             }
-            mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), "", null);
+            mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), DB_PASSWORD, null);
             Assert.assertTrue(mDatabase != null);
             mDatabase.setVersion(CURRENT_DATABASE_VERSION);
         }

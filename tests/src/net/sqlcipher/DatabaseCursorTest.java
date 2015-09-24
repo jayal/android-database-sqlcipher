@@ -45,6 +45,7 @@ public class DatabaseCursorTest extends AndroidTestCase implements PerformanceTe
     private static final String sString3 = "this string is a little longer, but still a test";
 
     private static final int CURRENT_DATABASE_VERSION = 42;
+    private static final String DB_PASSWORD = "abcd1234";
     private SQLiteDatabase mDatabase;
     private File mDatabaseFile;
 
@@ -58,7 +59,7 @@ public class DatabaseCursorTest extends AndroidTestCase implements PerformanceTe
         if (mDatabaseFile.exists()) {
             mDatabaseFile.delete();
         }
-        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), "", null);
+        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), DB_PASSWORD, null);
         assertNotNull(mDatabase);
         mDatabase.setVersion(CURRENT_DATABASE_VERSION);
     }
@@ -91,41 +92,41 @@ public class DatabaseCursorTest extends AndroidTestCase implements PerformanceTe
     public void testBlob() throws Exception {
         // create table
         mDatabase.execSQL(
-            "CREATE TABLE test (_id INTEGER PRIMARY KEY, s TEXT, d REAL, l INTEGER, b BLOB);");
+                "CREATE TABLE test (_id INTEGER PRIMARY KEY, s TEXT, d REAL, l INTEGER, b BLOB);");
         // insert blob
         Object[] args = new Object[4];
-        
+
         byte[] blob = new byte[1000];
         byte value = 99;
-        Arrays.fill(blob, value);        
+        Arrays.fill(blob, value);
         args[3] = blob;
-        
-        String s = new String("text");        
+
+        String s = new String("text");
         args[0] = s;
         Double d = 99.9;
         args[1] = d;
-        Long l = (long)1000;
+        Long l = (long) 1000;
         args[2] = l;
-        
+
         String sql = "INSERT INTO test (s, d, l, b) VALUES (?,?,?,?)";
         mDatabase.execSQL(sql, args);
         // use cursor to access blob
-        Cursor c = mDatabase.query("test", null, null, null, null, null, null);        
+        Cursor c = mDatabase.query("test", null, null, null, null, null, null);
         c.moveToNext();
         ContentValues cv = new ContentValues();
         DatabaseUtils.cursorRowToContentValues(c, cv);
-        
+
         int bCol = c.getColumnIndexOrThrow("b");
         int sCol = c.getColumnIndexOrThrow("s");
         int dCol = c.getColumnIndexOrThrow("d");
         int lCol = c.getColumnIndexOrThrow("l");
-        byte[] cBlob =  c.getBlob(bCol);
+        byte[] cBlob = c.getBlob(bCol);
         assertTrue(Arrays.equals(blob, cBlob));
         assertEquals(s, c.getString(sCol));
-        assertEquals((double)d, c.getDouble(dCol));
-        assertEquals((long)l, c.getLong(lCol));        
+        assertEquals((double) d, c.getDouble(dCol));
+        assertEquals((long) l, c.getLong(lCol));
     }
-    
+
     @MediumTest
     public void testRealColumns() throws Exception {
         mDatabase.execSQL("CREATE TABLE test (_id INTEGER PRIMARY KEY, data REAL);");
@@ -264,11 +265,12 @@ public class DatabaseCursorTest extends AndroidTestCase implements PerformanceTe
         int total;
         SQLiteCursor c;
         boolean quit = false;
+
         public TestObserver(int total_, SQLiteCursor cursor) {
             c = cursor;
             total = total_;
         }
-        
+
         @Override
         public void onChanged() {
             int count = c.getCount();
@@ -292,15 +294,15 @@ public class DatabaseCursorTest extends AndroidTestCase implements PerformanceTe
     @LargeTest
     public void testManyRowsLong() throws Exception {
         mDatabase.execSQL("CREATE TABLE test (_id INTEGER PRIMARY KEY, data INT);");
-        
-        final int count = 36799; 
+
+        final int count = 36799;
         mDatabase.execSQL("BEGIN Transaction;");
         for (int i = 0; i < count; i++) {
             mDatabase.execSQL("INSERT INTO test (data) VALUES (" + i + ");");
         }
         mDatabase.execSQL("COMMIT;");
 
-        Cursor c = mDatabase.query("test", new String[]{"data"}, null, null, null, null, null);
+        Cursor c = mDatabase.query("test", new String[] { "data" }, null, null, null, null, null);
         assertNotNull(c);
 
         int i = 0;
@@ -336,7 +338,7 @@ public class DatabaseCursorTest extends AndroidTestCase implements PerformanceTe
         }
         mDatabase.execSQL("COMMIT;");
 
-        Cursor c = mDatabase.query("test", new String[]{"data"}, null, null, null, null, null);
+        Cursor c = mDatabase.query("test", new String[] { "data" }, null, null, null, null, null);
         assertNotNull(c);
 
         int i = 0;
@@ -348,11 +350,11 @@ public class DatabaseCursorTest extends AndroidTestCase implements PerformanceTe
         assertEquals(count, c.getCount());
         c.close();
     }
-    
+
     @LargeTest
     public void testManyRowsTxtLong() throws Exception {
         mDatabase.execSQL("CREATE TABLE test (_id INTEGER PRIMARY KEY, txt TEXT, data INT);");
-        
+
         Random random = new Random(System.currentTimeMillis());
         StringBuilder randomString = new StringBuilder(1979);
         for (int i = 0; i < 1979; i++) {
@@ -373,7 +375,7 @@ public class DatabaseCursorTest extends AndroidTestCase implements PerformanceTe
         }
         mDatabase.execSQL("COMMIT;");
 
-        Cursor c = mDatabase.query("test", new String[]{"txt", "data"}, null, null, null, null, null);
+        Cursor c = mDatabase.query("test", new String[] { "txt", "data" }, null, null, null, null, null);
         assertNotNull(c);
 
         int i = 0;
@@ -386,7 +388,7 @@ public class DatabaseCursorTest extends AndroidTestCase implements PerformanceTe
         assertEquals(count, c.getCount());
         c.close();
     }
-   
+
     @MediumTest
     public void testRequery() throws Exception {
         populateDefaultTable();
@@ -423,7 +425,7 @@ public class DatabaseCursorTest extends AndroidTestCase implements PerformanceTe
         populateDefaultTable();
 
         Cursor c = mDatabase.rawQuery("SELECT data FROM test WHERE data = ?",
-                new String[]{sString1});
+                new String[] { sString1 });
         assertNotNull(c);
         assertEquals(1, c.getCount());
         assertTrue(c.moveToFirst());
@@ -439,7 +441,8 @@ public class DatabaseCursorTest extends AndroidTestCase implements PerformanceTe
     @MediumTest
     public void testRequeryWithAlteredSelectionArgs() throws Exception {
         /**
-         * Test the ability of a subclass of SQLiteCursor to change its query arguments.
+         * Test the ability of a subclass of SQLiteCursor to change its query
+         * arguments.
          */
         populateDefaultTable();
 
@@ -450,14 +453,14 @@ public class DatabaseCursorTest extends AndroidTestCase implements PerformanceTe
                 return new SQLiteCursor(db, masterQuery, editTable, query) {
                     @Override
                     public boolean requery() {
-                        setSelectionArguments(new String[]{"2"});
+                        setSelectionArguments(new String[] { "2" });
                         return super.requery();
                     }
                 };
             }
         };
         Cursor c = mDatabase.rawQueryWithFactory(
-                factory, "SELECT data FROM test WHERE _id <= ?", new String[]{"1"},
+                factory, "SELECT data FROM test WHERE _id <= ?", new String[] { "1" },
                 null);
         assertNotNull(c);
         assertEquals(1, c.getCount());
@@ -477,11 +480,12 @@ public class DatabaseCursorTest extends AndroidTestCase implements PerformanceTe
         c.deactivate();
         c.requery();
     }
+
     /**
-     * sometimes CursorWindow creation fails due to non-availability of memory create
-     * another CursorWindow object. One of the scenarios of its occurrence is when
-     * there are too many CursorWindow objects already opened by the process.
-     * This test is for that scenario.
+     * sometimes CursorWindow creation fails due to non-availability of memory
+     * create another CursorWindow object. One of the scenarios of its
+     * occurrence is when there are too many CursorWindow objects already opened
+     * by the process. This test is for that scenario.
      */
     @LargeTest
     public void testCursorWindowFailureWhenTooManyCursorWindowsLeftOpen() {

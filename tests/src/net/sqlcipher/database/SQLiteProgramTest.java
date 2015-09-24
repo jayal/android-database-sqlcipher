@@ -24,6 +24,7 @@ import android.test.MoreAsserts;
 
 public class SQLiteProgramTest extends AndroidTestCase {
     private static final String DATABASE_NAME = "db_program_test.db";
+    private static final String DB_PASSWORD = "abcd1234";
 
     private SQLiteDatabase mDatabase;
     private File mDatabaseFile;
@@ -38,7 +39,7 @@ public class SQLiteProgramTest extends AndroidTestCase {
             mDatabaseFile.delete();
         }
         mDatabaseFile.getParentFile().mkdirs(); // directory may not exist
-        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile, "", null);
+        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile, DB_PASSWORD, null);
 
         assertNotNull(mDatabase);
     }

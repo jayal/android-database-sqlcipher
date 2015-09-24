@@ -33,6 +33,7 @@ public class SQLiteQueryBuilderTest extends AndroidTestCase {
     private final String TEST_TABLE_NAME = "test";
     private final String EMPLOYEE_TABLE_NAME = "employee";
     private static final String DATABASE_FILE = "db_query_builder.db";
+    private static final String DB_PASSWORD = "abcd1234";
 
     @Override
     protected void setUp() throws Exception {
@@ -44,7 +45,7 @@ public class SQLiteQueryBuilderTest extends AndroidTestCase {
             databaseFile.delete();
         }
         databaseFile.getParentFile().mkdirs(); // directory may not exist
-        mDatabase = SQLiteDatabase.openOrCreateDatabase(databaseFile, "", null);
+        mDatabase = SQLiteDatabase.openOrCreateDatabase(databaseFile, DB_PASSWORD, null);
         assertNotNull(mDatabase);
     }
 

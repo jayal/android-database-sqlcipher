@@ -29,23 +29,24 @@ import java.util.Locale;
 
 public class DatabaseLocaleTest extends AndroidTestCase {
 
+    private static final String DB_PASSWORD = "abcd1234";
     private SQLiteDatabase mDatabase;
 
     private static final String[] STRINGS = {
-        "c\u00f4t\u00e9",
-        "cote",
-        "c\u00f4te",
-        "cot\u00e9",
-        "boy",
-        "dog",
-        "COTE",
+            "c\u00f4t\u00e9",
+            "cote",
+            "c\u00f4te",
+            "cot\u00e9",
+            "boy",
+            "dog",
+            "COTE",
     };
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         SQLiteDatabase.loadLibs(getContext());
-        mDatabase = SQLiteDatabase.create(null, "");
+        mDatabase = SQLiteDatabase.create(null, DB_PASSWORD);
         mDatabase.execSQL(
                 "CREATE TABLE test (id INTEGER PRIMARY KEY, data TEXT COLLATE LOCALIZED);");
     }
@@ -96,13 +97,13 @@ public class DatabaseLocaleTest extends AndroidTestCase {
         // meaning that all versions of a character compare equal (regardless
         // of case or accents), leaving the "cote" flavors in database order.
         MoreAsserts.assertEquals(results, new String[] {
-                STRINGS[4],  // "boy"
-                STRINGS[0],  // sundry forms of "cote"
+                STRINGS[4], // "boy"
+                STRINGS[0], // sundry forms of "cote"
                 STRINGS[1],
                 STRINGS[2],
                 STRINGS[3],
-                STRINGS[6],  // "COTE"
-                STRINGS[5],  // "dog"
+                STRINGS[6], // "COTE"
+                STRINGS[5], // "dog"
         });
     }
 
@@ -110,20 +111,21 @@ public class DatabaseLocaleTest extends AndroidTestCase {
     public void testHoge() throws Exception {
         Cursor cursor = null;
         try {
-            String expectedString = new String(new int[] {0xFE000}, 0, 1);
+            String expectedString = new String(new int[] { 0xFE000 }, 0, 1);
             mDatabase.execSQL("INSERT INTO test(id, data) VALUES(1, '" + expectedString + "')");
             cursor = mDatabase.rawQuery("SELECT data FROM test WHERE id = 1", null);
-            
+
             assertNotNull(cursor);
             assertTrue(cursor.moveToFirst());
             String actualString = cursor.getString(0);
             assertEquals(expectedString.length(), actualString.length());
             for (int i = 0; i < expectedString.length(); i++) {
-                assertEquals((int)expectedString.charAt(i), (int)actualString.charAt(i));
+                assertEquals((int) expectedString.charAt(i), (int) actualString.charAt(i));
             }
             assertEquals(expectedString, actualString);
         } finally {
-            if (cursor != null) cursor.close();
+            if (cursor != null)
+                cursor.close();
         }
     }
 }

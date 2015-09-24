@@ -38,6 +38,7 @@ public class CTSSQLiteCursorTest extends AndroidTestCase {
     private static final int TEST_COUNT = 10;
     private static final String TEST_SQL = "SELECT * FROM test ORDER BY number_1";
     private static final String DATABASE_FILE = "cts_db_cursor_test.db";
+    private static final String DB_PASSWORD = "abcd1234";
 
     @Override
     protected void setUp() throws Exception {
@@ -49,7 +50,7 @@ public class CTSSQLiteCursorTest extends AndroidTestCase {
             databaseFile.delete();
         }
         databaseFile.getParentFile().mkdirs(); // directory may not exist
-        mDatabase = SQLiteDatabase.openOrCreateDatabase(databaseFile, "", null);
+        mDatabase = SQLiteDatabase.openOrCreateDatabase(databaseFile, DB_PASSWORD, null);
 
         createTable(TABLE_NAME, TABLE_COLUMNS);
         addValuesIntoTable(TABLE_NAME, DEFAULT_TABLE_VALUE_BEGINS, TEST_COUNT);

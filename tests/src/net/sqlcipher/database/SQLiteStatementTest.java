@@ -42,6 +42,7 @@ public class SQLiteStatementTest extends AndroidTestCase {
     };
 
     private static final String DATABASE_NAME = "db_stmt_test.db";
+    private static final String DB_PASSWORD = "abcd1234";
 
     private static final int CURRENT_DATABASE_VERSION = 42;
     private SQLiteDatabase mDatabase;
@@ -56,7 +57,7 @@ public class SQLiteStatementTest extends AndroidTestCase {
             databaseFile.delete();
         }
         databaseFile.getParentFile().mkdirs(); // directory may not exist
-        mDatabase = SQLiteDatabase.openOrCreateDatabase(databaseFile, "", null);
+        mDatabase = SQLiteDatabase.openOrCreateDatabase(databaseFile, DB_PASSWORD, null);
         assertNotNull(mDatabase);
         mDatabase.setVersion(CURRENT_DATABASE_VERSION);
     }

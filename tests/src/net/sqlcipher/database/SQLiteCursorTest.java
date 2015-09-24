@@ -30,6 +30,8 @@ public class SQLiteCursorTest extends AndroidTestCase {
     private SQLiteDatabase mDatabase;
     private File mDatabaseFile;
     private static final String TABLE_NAME = "testCursor";
+    private static final String DB_PASSWORD = "abcd1234";
+
     @Override
     protected void setUp() throws Exception {
         super.setUp();
@@ -39,7 +41,7 @@ public class SQLiteCursorTest extends AndroidTestCase {
         if (mDatabaseFile.exists()) {
             mDatabaseFile.delete();
         }
-        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), "", null);
+        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), DB_PASSWORD, null);
         assertNotNull(mDatabase);
         // create a test table
         mDatabase.execSQL("CREATE TABLE " + TABLE_NAME + " (i int, j int);");
@@ -94,7 +96,7 @@ public class SQLiteCursorTest extends AndroidTestCase {
 
         // scroll through ALL data in the table using a cursor. should cause multiple calls to
         // native_fill_window (and re-fills of the CursorWindow object)
-        Cursor c = mDatabase.query(testTable, new String[]{"col1", "desc"},
+        Cursor c = mDatabase.query(testTable, new String[] { "col1", "desc" },
                 null, null, null, null, null);
         int i = 0;
         while (c.moveToNext()) {
@@ -138,7 +140,7 @@ public class SQLiteCursorTest extends AndroidTestCase {
             // nothing to do - just scrolling to about half-point in the resultset
         }
         mDatabase.beginTransaction();
-        mDatabase.delete(testTable, "col1 < ?", new String[]{ (3 * M / 4) + ""});
+        mDatabase.delete(testTable, "col1 < ?", new String[] { (3 * M / 4) + "" });
         mDatabase.setTransactionSuccessful();
         mDatabase.endTransaction();
         c.requery();

@@ -19,8 +19,10 @@ package net.sqlcipher;
 import net.sqlcipher.database.SQLiteDatabase;
 import android.test.suitebuilder.annotation.Suppress;
 import android.util.Log;
+
 import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import android.test.AndroidTestCase;
 
 /* 
@@ -35,6 +37,7 @@ public class DatabaseLockTest extends AndroidTestCase {
     private static final int NUM_ITERATIONS = 100;
     private static final int SLEEP_TIME = 30;
     private static final int MAX_ALLOWED_LATENCY_TIME = 30;
+    private static final String DB_PASSWORD = "abcd1234";
     private SQLiteDatabase mDatabase;
     private File mDatabaseFile;
     private AtomicInteger mCounter = new AtomicInteger();
@@ -45,11 +48,11 @@ public class DatabaseLockTest extends AndroidTestCase {
         SQLiteDatabase.loadLibs(getContext());
         File parentDir = getContext().getFilesDir();
         mDatabaseFile = new File(parentDir, "db_lock_test.db");
-        
+
         if (mDatabaseFile.exists()) {
             mDatabaseFile.delete();
         }
-        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), "", null);
+        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), DB_PASSWORD, null);
         assertNotNull(mDatabase);
     }
 
@@ -61,17 +64,17 @@ public class DatabaseLockTest extends AndroidTestCase {
     }
 
     /*
-     * testLockFairness() tests the fairness of prioritizing multiple threads 
-     * attempting to access a database concurrently.
-     * This test is intended to verify that, when two threads are accessing the
-     * same database at the same time with the same prioritization, neither thread 
-     * is locked out and prevented from accessing the database.
+     * testLockFairness() tests the fairness of prioritizing multiple threads
+     * attempting to access a database concurrently. This test is intended to
+     * verify that, when two threads are accessing the same database at the same
+     * time with the same prioritization, neither thread is locked out and
+     * prevented from accessing the database.
      */
     @Suppress
     public void testLockFairness() {
         startDatabaseFairnessThread();
         int previous = 0;
-        for (int i = 0; i < NUM_ITERATIONS; i++) { 
+        for (int i = 0; i < NUM_ITERATIONS; i++) {
             mDatabase.beginTransaction();
             int val = mCounter.get();
             if (i == 0) {
@@ -79,14 +82,14 @@ public class DatabaseLockTest extends AndroidTestCase {
             }
             assertTrue(previous == (val - i));
             try {
-                Thread.currentThread().sleep(SLEEP_TIME); 
+                Thread.currentThread().sleep(SLEEP_TIME);
             } catch (InterruptedException e) {
                 // ignore
             }
             mDatabase.endTransaction();
         }
     }
-    
+
     /*
      * This function is to create the second thread for testLockFairness() test.
      */
@@ -109,12 +112,12 @@ public class DatabaseLockTest extends AndroidTestCase {
                 mDatabase.endTransaction();
             }
         }
-    }    
-    
+    }
+
     /*
-     * testLockLatency() tests the latency of database locks.
-     * This test is intended to verify that, even when two threads are accessing
-     * the same database, the locking/unlocking of the database is done within an
+     * testLockLatency() tests the latency of database locks. This test is
+     * intended to verify that, even when two threads are accessing the same
+     * database, the locking/unlocking of the database is done within an
      * appropriate amount of time (MAX_ALLOWED_LATENCY_TIME).
      */
     @Suppress
@@ -122,7 +125,7 @@ public class DatabaseLockTest extends AndroidTestCase {
         startDatabaseLatencyThread();
         long sumTime = 0;
         long maxTime = 0;
-        for (int i = 0; i < NUM_ITERATIONS; i++) { 
+        for (int i = 0; i < NUM_ITERATIONS; i++) {
             long startTime = System.currentTimeMillis();
             mDatabase.beginTransaction();
             long endTime = System.currentTimeMillis();
@@ -132,18 +135,18 @@ public class DatabaseLockTest extends AndroidTestCase {
             }
             sumTime += elapsedTime;
             try {
-                Thread.sleep(SLEEP_TIME); 
+                Thread.sleep(SLEEP_TIME);
             } catch (InterruptedException e) {
                 // ignore
-            }   
+            }
             mDatabase.endTransaction();
         }
-        long averageTime = sumTime/NUM_ITERATIONS;
+        long averageTime = sumTime / NUM_ITERATIONS;
         Log.i("DatabaseLockLatency", "AverageTime: " + averageTime);
         Log.i("DatabaseLockLatency", "MaxTime: " + maxTime);
-        assertTrue( (averageTime - SLEEP_TIME) <= MAX_ALLOWED_LATENCY_TIME);
+        assertTrue((averageTime - SLEEP_TIME) <= MAX_ALLOWED_LATENCY_TIME);
     }
-    
+
     /*
      * This function is to create the second thread for testLockLatency() test.
      */
@@ -155,16 +158,16 @@ public class DatabaseLockTest extends AndroidTestCase {
     private class DatabaseLatencyThread extends Thread {
         @Override
         public void run() {
-            for (int i = 0; i < NUM_ITERATIONS; i++) 
+            for (int i = 0; i < NUM_ITERATIONS; i++)
             {
                 mDatabase.beginTransaction();
                 try {
                     Thread.sleep(SLEEP_TIME);
                 } catch (InterruptedException e) {
                     // ignore
-                } 
+                }
                 mDatabase.endTransaction();
             }
         }
-    }        
+    }
 }

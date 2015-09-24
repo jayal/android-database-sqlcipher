@@ -26,6 +26,7 @@ import android.test.AndroidTestCase;
  */
 public class SQLiteOpenHelperTest extends AndroidTestCase {
     private static final String TEST_DATABASE_NAME = "db_open_helper.db";
+    private static final String DB_PASSWORD = "abcd1234";
     private static final int TEST_VERSION = 1;
     private static final int TEST_ILLEGAL_VERSION = 0;
     private MockOpenHelper mOpenHelper;
@@ -60,7 +61,7 @@ public class SQLiteOpenHelperTest extends AndroidTestCase {
         SQLiteDatabase database = null;
         assertFalse(mOpenHelper.hasCalledOnOpen());
         // Test getReadableDatabase.
-        database = mOpenHelper.getReadableDatabase("");
+        database = mOpenHelper.getReadableDatabase(DB_PASSWORD);
         assertNotNull(database);
         assertTrue(database.isOpen());
         assertTrue(mOpenHelper.hasCalledOnOpen());
@@ -69,7 +70,7 @@ public class SQLiteOpenHelperTest extends AndroidTestCase {
         mOpenHelper.resetStatus();
         assertFalse(mOpenHelper.hasCalledOnOpen());
         // Test getWritableDatabase.
-        SQLiteDatabase database2 = mOpenHelper.getWritableDatabase("");
+        SQLiteDatabase database2 = mOpenHelper.getWritableDatabase(DB_PASSWORD);
         assertSame(database, database2);
         assertTrue(database.isOpen());
         assertFalse(mOpenHelper.hasCalledOnOpen());
@@ -80,7 +81,7 @@ public class SQLiteOpenHelperTest extends AndroidTestCase {
         // After close(), onOpen() will be invoked by getWritableDatabase.
         mOpenHelper.resetStatus();
         assertFalse(mOpenHelper.hasCalledOnOpen());
-        SQLiteDatabase database3 = mOpenHelper.getWritableDatabase("");
+        SQLiteDatabase database3 = mOpenHelper.getWritableDatabase(DB_PASSWORD);
         assertNotNull(database);
         assertNotSame(database, database3);
         assertTrue(mOpenHelper.hasCalledOnOpen());

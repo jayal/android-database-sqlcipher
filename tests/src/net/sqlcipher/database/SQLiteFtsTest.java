@@ -38,6 +38,7 @@ public class SQLiteFtsTest extends AndroidTestCase {
 
     private SQLiteDatabase mDatabase;
     private static final String DATABASE_NAME = "CTS_FTS.db";
+    private static final String DB_PASSWORD = "abcd1234";
 
     @Override
     public void setUp() throws Exception {
@@ -49,7 +50,7 @@ public class SQLiteFtsTest extends AndroidTestCase {
             databaseFile.delete();
         }
         databaseFile.getParentFile().mkdirs(); // directory may not exist
-        mDatabase = SQLiteDatabase.openOrCreateDatabase(databaseFile, "", null);
+        mDatabase = SQLiteDatabase.openOrCreateDatabase(databaseFile, DB_PASSWORD, null);
     }
 
     @Override

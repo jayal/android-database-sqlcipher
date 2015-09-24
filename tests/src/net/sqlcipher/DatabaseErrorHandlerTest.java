@@ -34,6 +34,7 @@ public class DatabaseErrorHandlerTest extends AndroidTestCase {
     private SQLiteDatabase mDatabase;
     private File mDatabaseFile;
     private static final String DB_NAME = "db_error_test.db";
+    private static final String DB_PASSWORD = "abcd1234";
     private File dbDir;
 
     @Override
@@ -45,7 +46,7 @@ public class DatabaseErrorHandlerTest extends AndroidTestCase {
         if (mDatabaseFile.exists()) {
             mDatabaseFile.delete();
         }
-        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), "", null, null,
+        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), DB_PASSWORD, null, null,
                 new MyDatabaseCorruptionHandler());
         assertNotNull(mDatabase);
     }
@@ -79,22 +80,22 @@ public class DatabaseErrorHandlerTest extends AndroidTestCase {
             fail("expected exception");
         } catch (SQLiteDiskIOException e) {
             /**
-             * this test used to produce a corrupted db. but with new sqlite it instead reports
-             * Disk I/O error. meh..
-             * need to figure out how to cause corruption in db
+             * this test used to produce a corrupted db. but with new sqlite it
+             * instead reports Disk I/O error. meh.. need to figure out how to
+             * cause corruption in db
              */
             // expected
             if (mDatabaseFile.exists()) {
                 mDatabaseFile.delete();
             }
         } catch (SQLiteException e) {
-            
+
         }
         // database file should be gone
         assertFalse(mDatabaseFile.exists());
         // after corruption handler is called, the database file should be free of
         // database corruption
-        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), "", null, null,
+        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile.getPath(), DB_PASSWORD, null, null,
                 new MyDatabaseCorruptionHandler());
         assertTrue(db.isDatabaseIntegrityOk());
     }

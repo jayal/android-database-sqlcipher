@@ -38,6 +38,7 @@ public class DatabaseStatementTest extends AndroidTestCase implements Performanc
     private static final String DATABASE_NAME = "db_stmt_test.db";
 
     private static final int CURRENT_DATABASE_VERSION = 42;
+    private static final String DB_PASSWORD = "abcd1234";
     private SQLiteDatabase mDatabase;
     private File mDatabaseFile;
 
@@ -50,7 +51,7 @@ public class DatabaseStatementTest extends AndroidTestCase implements Performanc
             mDatabaseFile.delete();
         }
         mDatabaseFile.getParentFile().mkdirs(); // directory may not exist
-        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile, "", null);
+        mDatabase = SQLiteDatabase.openOrCreateDatabase(mDatabaseFile, DB_PASSWORD, null);
 
         assertNotNull(mDatabase);
         mDatabase.setVersion(CURRENT_DATABASE_VERSION);
