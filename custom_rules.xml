@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="custom_rules">
+    
+  <property name="jar.dir" value="jar" />
 
   <condition property="ndk.dir" value="${env.ANDROID_NDK}">
     <isset property="env.ANDROID_NDK" />
@@ -38,7 +40,6 @@
   </target>
 
   <target name="-post-build" depends="-getgitdetails,-javadoc">
-    <property name="jar.dir" value="libs" />
     <property name="jar.name" value="${jar.dir}/sqlcipher.jar" />
     <property file="${sdk.dir}/tools/source.properties" />
     <exec executable="cat" outputproperty="ndk.release">
@@ -63,4 +64,7 @@
     <copy file="${out.dir}/sqlcipher-javadoc.jar" todir="${jar.dir}" preservelastmodified="true" overwrite="true"/>
   </target>
 
+  <target name="-pre-clean">
+      <delete dir="${jar.dir}" />
+  </target>
 </project>

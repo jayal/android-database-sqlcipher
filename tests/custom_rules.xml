@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="custom_rules">
+    <property name="native.libs" value="libs" />
+    <target name="-pre-clean">
+        <delete dir="${native.libs}" />
+    </target>
+    
+    <target name="-pre-build">
+        <copy todir="${native.libs}" preservelastmodified="true" overwrite="true">
+            <fileset dir="../libs">
+                <exclude name="**/*.jar" />
+            </fileset>
+        </copy>
+    </target>    
+</project>
