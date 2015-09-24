@@ -38,7 +38,7 @@ init:
 	cd ${OPENSSL_DIR} && git clean -dfx && \
 	git checkout -f && ./Configure dist
 
-all: build-external build-jni build-java copy-libs
+all: build-external build-jni copy-libs build-java
 
 build-external:
 	cd ${EXTERNAL_DIR} && \
