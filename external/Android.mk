@@ -236,20 +236,8 @@ icu_local_ldlibs := -lc -ldl -lm -lpthread
 #
 # Build for the target (device).
 #
-
-#include $(CLEAR_VARS)
-#LOCAL_SRC_FILES := $(icu_src_files)
-#LOCAL_C_INCLUDES := $(icu_c_includes)
-#LOCAL_CFLAGS := $(icu_local_cflags) -DPIC -fPIC
-#LOCAL_SHARED_LIBRARIES += libdl
-##LOCAL_LDLIBS += $(icu_local_ldlibs)
-#LOCAL_MODULE_TAGS := optional
-#LOCAL_MODULE := libicuuc
-#LOCAL_ADDITIONAL_DEPENDENCIES += $(ICU_COMMON_PATH)/Android.mk
-#LOCAL_REQUIRED_MODULES += icu-data
-#include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
-LOCAL_SDK_VERSION := 9
+#LOCAL_SDK_VERSION := 9
 LOCAL_NDK_STL_VARIANT := stlport_static
 LOCAL_C_INCLUDES += $(icu_c_includes)
 LOCAL_EXPORT_C_INCLUDES += $(ICU_COMMON_PATH)
@@ -274,7 +262,6 @@ include $(BUILD_STATIC_LIBRARY)
 #--------------
 include $(CLEAR_VARS)
 LOCAL_PATH := $(PROJECT_ROOT_PATH)
-#ICU_I18N_PATH := $(LOCAL_PATH)/icu4c/i18n
 ICU_I18N_PATH := icu4c/i18n
 
 # start new icu18n
@@ -371,23 +358,8 @@ c_includes = \
 #
 # Build for the target (device).
 #
-
-#include $(CLEAR_VARS)
-
-#LOCAL_SRC_FILES := $(src_files)
-#LOCAL_C_INCLUDES := $(c_includes) \
-										abi/cpp/include
-#LOCAL_CFLAGS += -D_REENTRANT -DPIC -DU_I18N_IMPLEMENTATION -fPIC -fvisibility=hidden
-#LOCAL_CFLAGS += -O3
-#LOCAL_RTTI_FLAG := -frtti
-#LOCAL_SHARED_LIBRARIES += libgabi++
-#LOCAL_STATIC_LIBRARIES += libicuuc
-#LOCAL_LDLIBS += -lc -lpthread -lm
-#LOCAL_MODULE_TAGS := optional
-#LOCAL_MODULE := libicui18n
-#include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
-LOCAL_SDK_VERSION := 9
+#LOCAL_SDK_VERSION := 9
 LOCAL_NDK_STL_VARIANT := stlport_static
 LOCAL_SRC_FILES += $(src_files)
 LOCAL_C_INCLUDES += $(c_includes)
