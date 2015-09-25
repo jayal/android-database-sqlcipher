@@ -323,6 +323,17 @@ public final class SQLiteDatabase extends SQLiteClosable {
         }
     }
 
+    /**
+     * Change the password of the open database using sqlite3_rekey().
+     *
+     * @param password new database password
+     *
+     * @throws SQLiteException if there is an issue changing the password internally
+     *                         OR if the database is not open
+     *
+     * FUTURE @todo throw IllegalStateException if the database is not open and
+     *              update the test suite
+     */
     public void changePassword(String password) throws SQLiteException {
         if (!isOpen()) {
             throw new SQLiteException("database not open");
@@ -333,6 +344,23 @@ public final class SQLiteDatabase extends SQLiteClosable {
             session.changePassword(password);
         } finally {
             endTransaction();
+        }
+    }
+    
+    /**
+     * Change the password of the open database using sqlite3_rekey().
+     *
+     * @param password new database password
+     *
+     * @throws SQLiteException if there is an issue changing the password internally
+     *                         OR if the database is not open
+     *
+     * FUTURE @todo throw IllegalStateException if the database is not open and
+     *              update the test suite
+     */
+    public void changePassword(char[] password) throws SQLiteException {
+        if (password != null) {
+            changePassword(new String(password));
         }
     }
 
@@ -706,6 +734,9 @@ public final class SQLiteDatabase extends SQLiteClosable {
      */
     @Deprecated
     public boolean yieldIfContended() {
+        /* safeguard: */
+        if (!isOpen()) return false;
+        
         return yieldIfContendedHelper(false /* do not check yielding */,
                 -1 /* sleepAfterYieldDelay */);
     }
@@ -721,6 +752,9 @@ public final class SQLiteDatabase extends SQLiteClosable {
      * @return true if the transaction was yielded
      */
     public boolean yieldIfContendedSafely() {
+        /* safeguard: */
+        if (!isOpen()) return false;
+        
         return yieldIfContendedHelper(true /* check yielding */, -1 /* sleepAfterYieldDelay */);
     }
 
@@ -740,6 +774,9 @@ public final class SQLiteDatabase extends SQLiteClosable {
      * @return true if the transaction was yielded
      */
     public boolean yieldIfContendedSafely(long sleepAfterYieldDelay) {
+        /* safeguard: */
+        if (!isOpen()) return false;
+        
         return yieldIfContendedHelper(true /* check yielding */, sleepAfterYieldDelay);
     }
 
